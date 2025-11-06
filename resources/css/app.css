@@ -1,0 +1,180 @@
+@import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
+@source '../../vendor/livewire/flux/stubs/**/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+
+/* Light (300) */
+@font-face {
+  font-family: 'DinRoundPro';
+  src: url('../fonts/dinRoundPro/dinroundpro_light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Regular (400) */
+@font-face {
+  font-family: 'DinRoundPro';
+  src: url('../fonts/dinRoundPro/dinroundpro.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Medium (500) y Semibold (600) mismo peso*/
+@font-face {
+  font-family: 'DinRoundPro';
+  src: url('../fonts/dinRoundPro/dinroundpro_medi.woff2') format('woff2');
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bold (700) */
+@font-face {
+  font-family: 'DinRoundPro';
+  src: url('../fonts/dinRoundPro/dinroundpro_bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Black (900) */
+@font-face {
+  font-family: 'DinRoundPro';
+  src: url('../fonts/dinRoundPro/dinroundpro_black.woff2') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-din-round: 'DinRoundPro', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans: var(--font-din-round);
+  /*Cambiamos variable por defecto de la fuente*/
+
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f5f5f5;
+  --color-zinc-200: #e5e5e5;
+  --color-zinc-300: #d4d4d4;
+  --color-zinc-400: #a3a3a3;
+  --color-zinc-500: #737373;
+  --color-zinc-600: #525252;
+  --color-zinc-700: #404040;
+  --color-zinc-800: #262626;
+  --color-zinc-900: #171717;
+  --color-zinc-950: #0a0a0a;
+
+  --color-accent: var(--color-neutral-800);
+  --color-accent-content: var(--color-neutral-800);
+  --color-accent-foreground: var(--color-white);
+
+  /* Primary Colors */
+  --color-primary-10: --alpha(var(--color-primary-500) / 10%);
+  --color-primary-50: --alpha(var(--color-primary-500) / 50%);
+  --color-primary-100: #dbfad1;
+  --color-primary-200: #b7f5a7;
+  --color-primary-300: #8fec74;
+  --color-primary-400: #6fdc45;
+  --color-primary-500: #58cc02;
+  --color-primary-600: #45a301;
+
+  /* Secondary Colors */
+  --color-secondary-10: #0c8ed11a;
+  --color-secondary-50: #0c8ed180;
+  --color-secondary-100: #d0f0fc;
+  --color-secondary-200: #a0e0fa;
+  --color-secondary-300: #6ecffa;
+  --color-secondary-400: #3dbdf7;
+  --color-secondary-500: #1cb0f6;
+  --color-secondary-600: #0c8ed1;
+
+  /* Neutral Colors */
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #2d2d2d;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  /* Accent Colors */
+  --color-accent-50: #ff95001a;
+  --color-accent-100: #ffd699;
+  --color-accent-200: #ff9500;
+  --color-accent-300: #cc7700;
+
+  /* Red Colors */
+  --color-red-10: #dc35451a;
+  --color-red-100: #dc3545;
+  --color-red-200: #a21c29;
+
+  /* Yellow Colors */
+  --color-yellow-10: #ffc1071a;
+  --color-yellow-100: #fff5c2;
+  --color-yellow-300: #ffe066;
+  --color-yellow-500: #ffd43b;
+  --color-yellow-600: #e6b900;
+  --color-yellow-700: #b38c00;
+
+  /* Green Colors */
+  --color-green-100: #28a745;
+  --color-green-200: #1d7a27;
+
+  /* Purple Colors */
+  --color-purple-10: #6725771a;
+  --color-purple-40: #67257780;
+  --color-purple-50: #cf93dd;
+  --color-purple-100: #cf93dd;
+  --color-purple-200: #b75dcd;
+  --color-purple-300: #9636ad;
+  --color-purple-400: #672577;
+  --color-purple-500: #3c1645;
+
+}
+
+@layer theme {
+  .dark {
+    --color-accent: var(--color-white);
+    --color-accent-content: var(--color-white);
+    --color-accent-foreground: var(--color-neutral-800);
+  }
+}
+
+@layer base {
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+[data-flux-field]:not(ui-radio, ui-checkbox) {
+  @apply grid gap-2;
+}
+
+[data-flux-label] {
+  @apply !mb-0 !leading-tight;
+}
+
+input:focus[data-flux-control],
+textarea:focus[data-flux-control],
+select:focus[data-flux-control] {
+  @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+}
+
+/* \[:where(&)\]:size-4 {
+    @apply size-4;
+} */
