@@ -24,6 +24,10 @@ Route::get('teacher', function () {
     return view('teacher.index');
 })->name('teacher');
 
+Route::get('teacher/groups', function () {
+    return view('teacher.groups');
+})->name('groups');
+
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

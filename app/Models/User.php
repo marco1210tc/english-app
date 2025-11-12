@@ -23,6 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'total_points',
     ];
 
     /**
@@ -58,7 +60,47 @@ class User extends Authenticatable
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    // --- RELACIONES ---
+
+    // Relaciones como Maestro (Teacher)
+    public function taughtClassrooms()
+    {
+        return $this->hasMany(Classroom::class, 'teacher_id');
+    }
+
+    public function createdTasks()
+    {
+        return $this->hasMany(Task::class, 'teacher_id');
+    }
+
+    // Relaciones como Estudiante (Student)
+    public function classrooms()
+    {
+        // Un estudiante pertenece a muchas aulas
+        return $this->belongsToMany(Classroom::class, 'classroom_user');
+    }
+
+    public function taskSubmissions()
+    {
+        return $this->hasMany(TaskSubmission::class, 'user_id');
+    }
+
+    public function challengeSubmissions()
+    {
+        return $this->hasMany(ChallengeSubmission::class, 'user_id');
+    }
+
+    public function achievements()
+    {
+        // Un estudiante puede tener muchos logros
+        // Le decimos a Laravel que la tabla solo tiene 'unlocked_at'
+        return $this->belongsToMany(Achievement::class, 'achievement_user')
+            ->withPivot('unlocked_at') // Le decimos que columna custom existe
+            ->using(AchievementUser::class) // Le decimos que use el modelo pivot
+            ->as('pivot'); // Nombre del objeto pivot
     }
 }

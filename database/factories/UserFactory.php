@@ -31,7 +31,27 @@ class UserFactory extends Factory
             'two_factor_secret' => Str::random(10),
             'two_factor_recovery_codes' => Str::random(10),
             'two_factor_confirmed_at' => now(),
+
+            'role' => 'student', // Por defecto es estudiante
+            'total_points' => fake()->numberBetween(0, 1000)
         ];
+    }
+
+    // --- ESTADO PARA MAESTROS ---
+    public function teacher(): Factory
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'teacher',
+            'total_points' => 0, // Los maestros no tienen puntos
+        ]);
+    }
+
+    // --- ESTADO PARA ESTUDIANTES ---
+    public function student(): Factory
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'student',
+        ]);
     }
 
     /**

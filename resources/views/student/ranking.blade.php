@@ -56,9 +56,6 @@
       z-index: 60;
     }
   </style>
-
-  <!-- Anime.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 </head>
 
 <body>
@@ -225,6 +222,9 @@
 
     </main>
   </div>
+    
+  <!-- Anime.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 </body>
 <!-- --- SCRIPTS: Lógica de gamificación y animaciones --- -->
 <script>
