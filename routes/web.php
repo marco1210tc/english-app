@@ -6,7 +6,9 @@ use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
-
+use App\Models\Classroom;
+use App\Http\Controllers\UsersController;
+use App\Http\Controllers\ClassroomController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -24,10 +26,12 @@ Route::get('teacher', function () {
     return view('teacher.index');
 })->name('teacher');
 
-Route::get('teacher/groups', function () {
-    return view('teacher.groups');
-})->name('groups');
+Route::get('teacher/groups', [ClassroomController::class, 'index'])->name('groups.index'); //solo para testear
+Route::get('teacher/groups/{group}', [ClassroomController::class, 'show'])->name('groups.show'); //solo para testear
+Route::get('teacher/groups/create', [ClassroomController::class, 'create'])->name('groups.create'); //solo para testear
+Route::post('teacher/groups', [ClassroomController::class, 'store'])->name('groups.store'); //solo para testear
 
+Route::get('users', [UsersController::class, 'index'])->name('users'); //solo para testear
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

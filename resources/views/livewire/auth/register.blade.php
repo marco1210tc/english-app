@@ -48,6 +48,12 @@
             viewable
         />
 
+        <!-- Role -->
+        <flux:select wire:model="role" placeholder="Choose role...">
+            <flux:select.option value="teacher">Teacher</flux:select.option>
+            <flux:select.option value="student">Student</flux:select.option>
+        </flux:select>
+
         <div class="flex items-center justify-end">
             <flux:button type="submit" variant="primary" class="w-full">
                 {{ __('Create account') }}

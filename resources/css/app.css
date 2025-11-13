@@ -84,6 +84,7 @@
   --color-primary-400: #6fdc45;
   --color-primary-500: #58cc02;
   --color-primary-600: #45a301;
+  --color-primary-700: #3e8b00;
 
   /* Secondary Colors */
   --color-secondary-10: #0c8ed11a;
@@ -158,6 +159,26 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Estilo global para scrollbars */
+  * {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #9ca3af #f3f4f6; /* thumb y track */
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: #9ca3af;
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #f3f4f6; /* gris claro */
   }
 }
 

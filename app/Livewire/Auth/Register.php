@@ -18,6 +18,8 @@ class Register extends Component
     public string $email = '';
 
     public string $password = '';
+    
+    public string $role = '';
 
     public string $password_confirmation = '';
 
@@ -30,6 +32,7 @@ class Register extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'string', 'in:teacher,student'],
         ]);
 
         event(new Registered(($user = User::create($validated))));
