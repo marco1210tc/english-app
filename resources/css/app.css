@@ -142,7 +142,7 @@
      ======================= */
 
     /* Fondos y superficies (modo claro por defecto) */
-    --color-background: var(--color-secondary-100);
+    /* --color-background: var(--color-secondary-100); */
     /* fondo app estudiante */
     --color-background-muted: var(--color-neutral-100);
     /* secciones suaves */
