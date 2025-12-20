@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->unique();
+            $table->string('code')->unique();
+            $table->string('pin_hash')->nullable();
             $table->unsignedBigInteger('classroom_id');
             $table->string('avatar')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
