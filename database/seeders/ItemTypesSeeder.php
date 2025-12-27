@@ -14,11 +14,16 @@ class ItemTypesSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['key' => 'vocabulary',     'name' => 'Vocabulary',       'description' => 'Reconocimiento de vocabulario', 'is_active' => true],
-            ['key' => 'quiz_question',  'name' => 'Quiz (MCQ)',       'description' => 'Pregunta con opciones',        'is_active' => true],
-            ['key' => 'listen_choose',  'name' => 'Listen & Choose',  'description' => 'Escucha y elige',             'is_active' => true],
-            ['key' => 'match',          'name' => 'Match',            'description' => 'Emparejar imagen-palabra',    'is_active' => true],
-            ['key' => 'order_letters',  'name' => 'Order Letters',    'description' => 'Ordenar letras',              'is_active' => true],
+            ['key' => 'multiple_choice', 'name' => 'Multiple Choice', 'description' => 'Opción múltiple', 'is_active' => true],
+            ['key' => 'true_false',      'name' => 'True/False',      'description' => 'Verdadero/Falso', 'is_active' => true],
+            ['key' => 'matching',        'name' => 'Matching',        'description' => 'Emparejar', 'is_active' => true],
+            ['key' => 'listening',       'name' => 'Listening',       'description' => 'Escucha y elige', 'is_active' => true],
+            ['key' => 'ordering',        'name' => 'Ordering',        'description' => 'Ordenar', 'is_active' => true],
+            ['key' => 'drag_drop',       'name' => 'Drag & Drop',     'description' => 'Arrastrar y soltar', 'is_active' => true],
+            ['key' => 'memory_cards',    'name' => 'Memory Cards',    'description' => 'Memoria', 'is_active' => true],
+
+            // útil para tests si metes ítems no-activity:
+            ['key' => 'vocabulary',      'name' => 'Vocabulary',      'description' => 'Reconocimiento de vocabulario', 'is_active' => true],
         ];
 
         foreach ($types as $t) {

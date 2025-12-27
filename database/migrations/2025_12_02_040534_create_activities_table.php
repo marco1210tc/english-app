@@ -16,15 +16,9 @@ return new class extends Migration
             $table->unsignedBigInteger('lesson_id');
             $table->string('title', 100);
             $table->text('description')->nullable();
-            $table->enum('activity_type', [
-                'multiple_choice',
-                'true_false',
-                'matching',
-                'listening',
-                'ordering',
-                'drag_drop',
-                'memory_cards',
-            ])->default('multiple_choice');
+            $table->foreignId('item_type_id')
+                ->constrained('item_types')
+                ->restrictOnDelete();
             $table->enum('difficulty', ['easy', 'medium', 'hard'])->default('easy');
             $table->unsignedInteger('max_score')->default(0);
             $table->unsignedInteger('order_index')->default(0);

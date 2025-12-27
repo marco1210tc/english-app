@@ -36,6 +36,11 @@ class Activity extends Model
         return $this->hasMany(StudentActivityAttempt::class);
     }
 
+    public function itemType()
+    {
+        return $this->belongsTo(ItemType::class);
+    }
+
     // Helper para obtener el tipo desde config_json
     public function getTypeAttribute(): ?string
     {

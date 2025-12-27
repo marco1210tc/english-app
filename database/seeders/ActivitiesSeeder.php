@@ -11,6 +11,15 @@ class ActivitiesSeeder extends Seeder
     {
         $lessons = DB::table('lessons')->get(['id']);
 
+        $listeningTypeId = DB::table('item_types')->where('key', 'listening')->value('id');
+        $matchingTypeId  = DB::table('item_types')->where('key', 'matching')->value('id');
+        $orderingTypeId  = DB::table('item_types')->where('key', 'ordering')->value('id');
+        $mcqTypeId       = DB::table('item_types')->where('key', 'multiple_choice')->value('id');
+
+        if (!$listeningTypeId || !$matchingTypeId || !$orderingTypeId || !$mcqTypeId) {
+            throw new \RuntimeException("Faltan item_types. Ejecuta ItemTypesSeeder o revisa keys.");
+        }
+
         foreach ($lessons as $lesson) {
             $vocabIds = DB::table('lesson_vocabulary')
                 ->where('lesson_id', $lesson->id)
@@ -18,12 +27,16 @@ class ActivitiesSeeder extends Seeder
                 ->pluck('vocabulary_id')
                 ->all();
 
+            if (count($vocabIds) === 0) continue;
+
+            $wordsMap = DB::table('vocabulary')->whereIn('id', $vocabIds)->pluck('word_en', 'id');
+
             // Listen & Choose
             $listenId = DB::table('activities')->insertGetId([
                 'lesson_id' => $lesson->id,
                 'title' => 'Listen & Choose',
                 'description' => 'Escucha el audio y elige la imagen/palabra correcta',
-                'activity_type' => 'listen_choose',
+                'item_type_id' => $listeningTypeId,
                 'difficulty' => 'easy',
                 'max_score' => count($vocabIds),
                 'order_index' => 0,
@@ -38,7 +51,7 @@ class ActivitiesSeeder extends Seeder
                 'lesson_id' => $lesson->id,
                 'title' => 'Match',
                 'description' => 'Empareja imagen con palabra',
-                'activity_type' => 'match',
+                'item_type_id' => $matchingTypeId,
                 'difficulty' => 'easy',
                 'max_score' => count($vocabIds),
                 'order_index' => 1,
@@ -53,7 +66,7 @@ class ActivitiesSeeder extends Seeder
                 'lesson_id' => $lesson->id,
                 'title' => 'Order Letters',
                 'description' => 'Ordena las letras para formar la palabra',
-                'activity_type' => 'order_letters',
+                'item_type_id' => $orderingTypeId,
                 'difficulty' => 'easy',
                 'max_score' => count($vocabIds),
                 'order_index' => 2,
@@ -69,7 +82,7 @@ class ActivitiesSeeder extends Seeder
                 'lesson_id' => $lesson->id,
                 'title' => 'Mini Quiz',
                 'description' => 'Preguntas de opción múltiple',
-                'activity_type' => 'quiz_question',
+                'item_type_id' => $mcqTypeId,
                 'difficulty' => 'easy',
                 'max_score' => count($quizVocab),
                 'order_index' => 3,
@@ -101,7 +114,8 @@ class ActivitiesSeeder extends Seeder
                 shuffle($options);
 
                 foreach ($options as $oIndex => $optVocabId) {
-                    $word = DB::table('vocabulary')->where('id', $optVocabId)->value('word_en');
+
+                    $word = $wordsMap[$optVocabId] ?? null;
 
                     DB::table('question_options')->insert([
                         'question_id' => $questionId,
