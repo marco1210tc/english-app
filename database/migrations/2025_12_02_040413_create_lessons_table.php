@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('module_id');
             $table->string('title', 100);
             $table->text('description')->nullable();
-            $table->unsignedInteger('order_index')->default(1);
+            $table->unsignedInteger('order_index')->default(0);
             $table->unsignedInteger('estimated_time')->nullable(); // minutos
             $table->boolean('is_active')->default(true);
             $table->timestamps();

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('student_id');
             $table->unsignedBigInteger('activity_id');
             $table->unsignedInteger('score_obtained')->default(0);
-            $table->unsignedInteger('max_score')->default(100);
+            $table->unsignedInteger('max_score')->default(0);
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->enum('status', ['in_progress', 'completed', 'abandoned'])
@@ -31,6 +31,8 @@ return new class extends Migration
             $table->foreign('activity_id')
                 ->references('id')->on('activities')
                 ->onDelete('cascade');
+
+            $table->timestamps();
         });
     }
 

@@ -14,15 +14,13 @@ return new class extends Migration
         Schema::create('students', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique();
-            $table->string('pin_hash')->nullable();
+            $table->string('pin_hash');
+            $table->string('first_name');
+            $table->string('last_name');
             $table->unsignedBigInteger('classroom_id');
             $table->string('avatar')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
-
-            $table->foreign('user_id')
-                ->references('id')->on('users')
-                ->onDelete('cascade');
 
             $table->foreign('classroom_id')
                 ->references('id')->on('classrooms')

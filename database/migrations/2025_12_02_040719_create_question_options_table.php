@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('question_options', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('question_id');
-            $table->string('text', 255)->nullable();
+            $table->string('text')->nullable();
             $table->string('image_path')->nullable();
             $table->boolean('is_correct')->default(false);
-            $table->unsignedInteger('order_index')->default(1);
+            $table->unsignedInteger('order_index')->default(0);
             $table->timestamps();
 
             $table->foreign('question_id')

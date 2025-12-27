@@ -11,24 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('progress_snapshots', function (Blueprint $table) {
-            $table->foreignId('test_result_id')
-                ->constrained('test_results')
+        Schema::create('test_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('test_id')
+                ->constrained('tests')
                 ->cascadeOnDelete();
 
             $table->foreignId('item_type_id')
                 ->constrained('item_types')
                 ->restrictOnDelete();
 
+            // ID del recurso evaluado
             $table->unsignedBigInteger('ref_id');
 
-            $table->boolean('is_correct')->default(false);
-            $table->json('response_json')->nullable();
-            $table->integer('time_spent_seconds')->default(0);
-
+            $table->integer('order_index')->default(0);
             $table->timestamps();
 
-            $table->index(['item_type_id', 'ref_id']);
+            // Índice compuesto para queries rápidos
+            $table->index(['item_type', 'ref_id']);
+            // evita duplicar mismo ítem en el mismo test
+            $table->unique(['test_id', 'item_type_id', 'ref_id']); 
         });
     }
 
@@ -37,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('progress_snapshots');
+        Schema::dropIfExists('test_items');
     }
 };

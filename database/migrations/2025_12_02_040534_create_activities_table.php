@@ -26,8 +26,8 @@ return new class extends Migration
                 'memory_cards',
             ])->default('multiple_choice');
             $table->enum('difficulty', ['easy', 'medium', 'hard'])->default('easy');
-            $table->unsignedInteger('max_score')->default(100);
-            $table->unsignedInteger('order_index')->default(1);
+            $table->unsignedInteger('max_score')->default(0);
+            $table->unsignedInteger('order_index')->default(0);
             $table->boolean('is_active')->default(true);
             $table->json('config_json')->nullable();
             $table->timestamps();

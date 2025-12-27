@@ -11,18 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('modules', function (Blueprint $table) {
+        Schema::create('item_types', function (Blueprint $table) {
             $table->id();
-            $table->unsignedTinyInteger('grade_id');
-            $table->string('title', 100);
-            $table->text('description')->nullable();
-            $table->unsignedInteger('order_index')->default(0);
+            // Clave técnica estable
+            // ej: vocabulary, quiz_question, match, order_letters
+            $table->string('key')->unique();
+
+            // Nombre legible
+            $table->string('name');
+
+            // Descripción funcional
+            $table->string('description')->nullable();
+
+            // Para controlar disponibilidad sin borrar
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->foreign('grade_id')
-                ->references('id')->on('grades')
-                ->onDelete('cascade');
         });
     }
 
@@ -31,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modules');
+        Schema::dropIfExists('item_types');
     }
 };

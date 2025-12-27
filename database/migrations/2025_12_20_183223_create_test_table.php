@@ -11,18 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('modules', function (Blueprint $table) {
+        Schema::create('test', function (Blueprint $table) {
             $table->id();
             $table->unsignedTinyInteger('grade_id');
-            $table->string('title', 100);
-            $table->text('description')->nullable();
-            $table->unsignedInteger('order_index')->default(0);
-            $table->boolean('is_active')->default(true);
+            $table->enum('type', ['pre', 'post']);
+            $table->string('title');
+            $table->foreignId('created_by')
+                ->constrained('users')
+                ->cascadeOnDelete();
             $table->timestamps();
 
             $table->foreign('grade_id')
                 ->references('id')->on('grades')
-                ->onDelete('cascade');
+                ->cascadeOnDelete();
         });
     }
 
@@ -31,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modules');
+        Schema::dropIfExists('test');
     }
 };

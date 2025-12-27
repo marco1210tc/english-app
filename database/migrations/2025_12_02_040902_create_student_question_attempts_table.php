@@ -16,9 +16,10 @@ return new class extends Migration
             $table->unsignedBigInteger('activity_attempt_id');
             $table->unsignedBigInteger('question_id')->nullable();
             $table->unsignedBigInteger('selected_option_id')->nullable();
-            $table->string('item_key', 100)->nullable(); // para juegos JSON (drag_drop, etc.)
             $table->boolean('is_correct')->default(false);
             $table->unsignedInteger('score_obtained')->default(0);
+            $table->integer('time_spent_seconds')->default(0);
+            $table->integer('hints_used')->default(0);
             $table->timestamp('answered_at')->nullable();
             $table->timestamps();
 
@@ -28,7 +29,7 @@ return new class extends Migration
 
             $table->foreign('question_id')
                 ->references('id')->on('questions')
-                ->onDelete('set null');
+                ->onDelete('cascade');
 
             $table->foreign('selected_option_id')
                 ->references('id')->on('question_options')
