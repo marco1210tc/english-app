@@ -31,8 +31,6 @@ return new class extends Migration
             $table->foreign('activity_id')
                 ->references('id')->on('activities')
                 ->onDelete('cascade');
-
-            $table->timestamps();
         });
     }
 

@@ -19,5 +19,20 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        $this->call([
+            ItemTypesSeeder::class,
+            GradesSeeder::class,
+            UsersSeeder::class,
+            ClassroomsSeeder::class,
+            StudentsSeeder::class,
+            VocabularySeeder::class,
+            ModulesLessonsSeeder::class,
+            LessonVocabularySeeder::class,
+            ActivitiesSeeder::class,
+            ClassroomLessonAssignmentsSeeder::class,
+            TestsSeeder::class,
+            TestItemsSeeder::class,
+        ]);
     }
 }
