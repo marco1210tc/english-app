@@ -51,8 +51,7 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureViews(): void
     {
         Fortify::loginView(function () {
-            $data = new Database();
-            $students = $data->students();
+            $students = Student::all();            
             return view('login', ['students' => $students]);
         });
         Fortify::verifyEmailView(fn() => view('livewire.auth.verify-email'));

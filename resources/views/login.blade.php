@@ -44,7 +44,7 @@ $initialStep = $shouldStartOnStep2 ? 2 : 1;
   </div>
 
   {{-- FORMULARIO ESTUDIANTE (MULTIPASO) --}}
-  <form x-show="role === 'student'" x-cloak method="POST" action="{{ route('login') }}" class="space-y-4">
+  <form x-show="role === 'student'" x-cloak method="POST" action="{{ route('student.login.submit') }}" class="space-y-4">
     @csrf
 
     {{-- Campos hidden para mandar code y nombre al backend si los necesitas --}}
@@ -70,7 +70,8 @@ $initialStep = $shouldStartOnStep2 ? 2 : 1;
           <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
             @foreach($students as $student)
             @php
-            $fullName = $student->user->name;
+            $fullName = trim(($student->first_name ?? '').' '.($student->last_name ?? ''));
+
             $parts = preg_split('/\s+/', trim($fullName));
 
             $first = $parts[0] ?? '';
@@ -96,7 +97,11 @@ $initialStep = $shouldStartOnStep2 ? 2 : 1;
               <div
                 class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-primary-500/90 text-white text-sm sm:text-base mb-1 shadow-sm">
                 <span class="font-bold">
-                  {{ $initial }}
+                  @isset ($student->avatar)
+                      <img src="{{ $student->avatar }}" class="w-full rounded-full">            
+                  @else
+                      {{ $initial }}
+                  @endisset
                 </span>
               </div>
               <span

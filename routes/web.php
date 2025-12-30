@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\ActivityController;
+use App\Http\Controllers\StudentAuthController;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -20,20 +21,33 @@ Route::view('dashboard', 'dashboard')
 
 // Route::view('entrar', 'entrar');
 
-Route::middleware(['auth', 'role:student'])
-    ->prefix('student')
-    ->name('student.')
+Route::prefix('s')->group(function () {
+
+    // Login estudiante
+    Route::post('/login', [StudentAuthController::class, 'login'])
+        ->name('student.login.submit');
+
+    // Logout estudiante
+    Route::post('/logout', [StudentAuthController::class, 'logout'])
+        ->name('student.logout');
+
+    // Rutas protegidas estudiante
+    Route::middleware('auth:student')->group(function () {
+        Route::get('/dashboard', fn () => view('student.dashboard'))
+            ->name('student.dashboard');
+    });
+});
+
+Route::middleware(['auth', 'role:teacher,admin'])
+    ->prefix('teacher')
     ->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])
-            ->name('dashboard');
+        // rutas teacher
+    });
 
-        // Ver una actividad
-        Route::get('/activities/{activity}', [ActivityController::class, 'show'])
-            ->name('activities.show');
-
-        // Enviar respuestas de una actividad
-        Route::post('/activities/{activity}/attempt', [ActivityController::class, 'submit'])
-            ->name('activities.submit');
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->group(function () {
+        // rutas admin
     });
 
 Route::middleware(['auth'])->group(function () {
@@ -54,3 +68,4 @@ Route::middleware(['auth'])->group(function () {
         )
         ->name('two-factor.show');
 });
+

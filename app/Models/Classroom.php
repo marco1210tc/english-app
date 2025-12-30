@@ -33,9 +33,4 @@ class Classroom extends Model
         return $this->belongsToMany(Student::class)
             ->withTimestamps();
     }
-
-    public function progressSnapshots()
-    {
-        return $this->hasMany(ProgressSnapshot::class);
-    }
 }

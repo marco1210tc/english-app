@@ -13,7 +13,7 @@ class Database extends Model
         $this->set();
     }
 
-    public function set()
+    private function set()
     {
         $students = collect([
                 (object)[
@@ -21,7 +21,8 @@ class Database extends Model
                     'code' => 'STU-001',
                     'pin'    => '1234',
                     'user' => (object)[
-                        'name'   => 'SofíaDelCar Martínez',
+                        'first_name'   => 'Sofía Del Carmen',
+                        'last_name' => 'Martínez',
                         'avatar' => 'https://ui-avatars.com/api/?name=Sofia+Martinez&background=0D8ABC&color=fff',
                     ],
                     'school' => (object)[
@@ -40,7 +41,8 @@ class Database extends Model
                     'code' => 'STU-002',
                     'pin'    => '4321',
                     'user' => (object)[
-                        'name'   => 'Diego Rojas',
+                        'first_name'   => 'Diego',
+                        'last_name' => 'Rojas',
                         'avatar' => 'https://ui-avatars.com/api/?name=Diego+Rojas&background=FF6B6B&color=fff',
                     ],
                     'school' => (object)[
@@ -59,7 +61,8 @@ class Database extends Model
                     'code' => 'STU-003',
                     'pin'    => '1111',
                     'user' => (object)[
-                        'name'   => 'Lucía Fernández',
+                        'name'   => 'Lucía',
+                        'last_name' => 'Fernández',
                         'avatar' => 'https://ui-avatars.com/api/?name=Lucia+Fernandez&background=FFD93D&color=000',
                     ],
                     'school' => (object)[
@@ -78,7 +81,8 @@ class Database extends Model
                     'code' => 'STU-004',
                     'pin'    => '1111',
                     'user' => (object)[
-                        'name'   => 'Miguel Hernández',
+                        'first_name'   => 'Miguel',
+                        'last_name' => 'Hernández',
                         'avatar' => 'https://ui-avatars.com/api/?name=Miguel+Hernandez&background=FFD93D&color=000',
                     ],
                     'school' => (object)[
@@ -96,7 +100,8 @@ class Database extends Model
                     'code' => 'STU-005',
                     'pin'    => '1111',
                     'user' => (object)[
-                        'name'   => 'Ana López',
+                        'first_name'   => 'Ana',
+                        'last_name' => 'López',
                         'avatar' => 'https://ui-avatars.com/api/?name=Miguel+Hernandez&background=FFD93D&color=000',
                     ],
                     'school' => (object)[

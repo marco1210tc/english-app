@@ -6,6 +6,8 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Faker\Factory as Faker;
+
 
 class StudentsSeeder extends Seeder
 {
@@ -14,6 +16,7 @@ class StudentsSeeder extends Seeder
      */
     public function run(): void
     {
+        $faker = Faker::create('es_ES');        
         $pinHash = Hash::make('1234');
 
         $classrooms = DB::table('classrooms')->get(['id', 'name']);
@@ -27,8 +30,8 @@ class StudentsSeeder extends Seeder
                 DB::table('students')->updateOrInsert(
                     ['code' => $code],
                     [
-                        'first_name' => "Alumno{$i}",
-                        'last_name' => $classroom->name,
+                        'first_name' => $faker->firstName,
+                        'last_name' => $faker->lastName,
                         'pin_hash' => $pinHash,
                         'classroom_id' => $classroom->id,
                         'avatar' => $avatarUrl,
