@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Hash;
 
 
 class Student extends Model
@@ -11,19 +12,23 @@ class Student extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'grade_id',
-        'code',       // código interno del cole, opcional
+        'code',
+        'pin_hash',
+        'classroom_id',
+        'avatar',
+        'status',
         'first_name',
         'last_name',
     ];
+
+    protected $hidden = ['pin_hash'];
+
+    public function verifyPin(string $pin): bool
+    {
+        return Hash::check($pin, $this->pin_hash);
+    }
     
     //Relaciones
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function grade()
     {
         return $this->belongsTo(Grade::class);
