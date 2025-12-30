@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('test', function (Blueprint $table) {
+        Schema::create('tests', function (Blueprint $table) {
             $table->id();
             $table->unsignedTinyInteger('grade_id');
             $table->enum('type', ['pre', 'post']);
