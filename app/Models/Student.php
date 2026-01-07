@@ -40,4 +40,10 @@ class Student extends Authenticatable
     {
         return $this->hasMany(StudentActivityAttempt::class);
     }
+
+    public function initials()
+    {
+        // Example logic: returns initials from the student's name
+        return strtoupper(substr($this->first_name, 0, 1) . substr($this->last_name, 0, 1));
+    }
 }

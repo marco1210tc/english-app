@@ -26,17 +26,13 @@ Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-// Route::view('entrar', 'entrar');
-
 Route::prefix('s')->group(function () {
-    // Login estudiante
+    // Login estudiante    
     Route::post('/login', [StudentAuthController::class, 'login'])
-        ->name('student.login.submit');
-
+        ->name('student.login.submit');    
     // Logout estudiante
     Route::post('/logout', [StudentAuthController::class, 'logout'])
         ->name('student.logout');
-
     // Rutas protegidas estudiante
     Route::middleware('auth:student')->group(function () {
         Route::get('/dashboard', fn() => view('student.dashboard'))
@@ -47,8 +43,9 @@ Route::prefix('s')->group(function () {
         Route::get('/lessons/{assignmentId}', [LessonsController::class, 'show'])
             ->name('student.lessons.show');
         // PLAYER
-        Route::get('/session/{assignmentId}', Player::class)
-            ->name('student.session.play');
+        Route::get('/session/{assignmentId}', fn($assignmentId) => 
+            view('student.session.play', compact('assignmentId')))
+            ->name('student.session.play');  
     });
 });
 

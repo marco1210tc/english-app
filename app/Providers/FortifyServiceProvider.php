@@ -84,23 +84,7 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureAuthentication(): void
     {
         Fortify::authenticateUsing(function (Request $request) {
-            // 1) LOGIN DE ESTUDIANTE: student_code  pin
-            if ($request->filled('student_code') && $request->filled('pin')) {
-                // Buscar al estudiante por su "code"
-                $student = Student::where('code', $request->input('student_code'))
-                    ->whereHas('user', fn($q) => $q->where('role', 'student'))
-                    ->first();
-
-                if ($student && $student->pin_hash && Hash::check($request->input('pin'), $student->pin_hash)) {
-                    // MUY IMPORTANTE: devolver el User, no el Student
-                    return $student->user;
-                }
-
-                // Si falla, devolvemos null y Fortify devolverá credenciales inválidas
-                return null;
-            }
-
-            // 2) LOGIN DOCENTE / ADMIN: email  password
+            // 1) LOGIN DOCENTE / ADMIN: email  password
             if ($request->filled('email') && $request->filled('password')) {
                 $user = User::where('email', $request->input('email'))->first();
 
@@ -123,7 +107,7 @@ class FortifyServiceProvider extends ServiceProvider
             return match ($user->role) {
                 'teacher' => route('teacher.dashboard'),
                 'admin'   => route('dashboard'),
-                default   => '/dashboard',
+                default   => 'teacher/dashboard',
             };
         });
     }
