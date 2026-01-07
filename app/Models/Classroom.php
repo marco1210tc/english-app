@@ -12,11 +12,15 @@ class Classroom extends Model
     protected $fillable = [
         'grade_id',
         'teacher_id',
-        'name',        // "1°A", "2°B"
-        'year',        // 2025, etc.
-        'description', // opcional
+        'name',        // ej: "A", "B" o "1A"
+        'class_code',  // ej: "1A"
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    // --- Relaciones base ---
     public function grade()
     {
         return $this->belongsTo(Grade::class);
@@ -24,13 +28,30 @@ class Classroom extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(Teacher::class);
+        return $this->belongsTo(User::class, 'teacher_id');
     }
 
     public function students()
     {
-        // Pivot: classroom_student (classroom_id, student_id)
-        return $this->belongsToMany(Student::class)
+        return $this->hasMany(Student::class);
+    }
+
+    // --- Asignación de lecciones (MVP) ---
+    public function lessonAssignments()
+    {
+        return $this->hasMany(ClassroomLessonAssignment::class);
+    }
+
+    public function lessons()
+    {
+        return $this->belongsToMany(Lesson::class, 'classroom_lesson_assignments')
+            ->withPivot(['status', 'assigned_by', 'assigned_at'])
             ->withTimestamps();
+    }
+
+    // --- Scopes útiles ---
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

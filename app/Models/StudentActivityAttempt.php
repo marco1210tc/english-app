@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class StudentActivityAttempt extends Model
 {
@@ -12,23 +12,24 @@ class StudentActivityAttempt extends Model
     protected $fillable = [
         'student_id',
         'activity_id',
-        'started_at',
-        'finished_at',
-        'duration_seconds',
-        'score',
+        'score_obtained',
         'max_score',
-        'correct_count',
-        'wrong_count',
-        'raw_payload',
-        'meta_json',
+        'started_at',
+        'completed_at',
+        'status',         // in_progress | completed | abandoned
+        'attempt_number',
     ];
 
     protected $casts = [
-        'started_at'  => 'datetime',
-        'finished_at' => 'datetime',
-        'raw_payload' => 'array',
-        'meta_json'   => 'array',
+        'student_id' => 'integer',
+        'activity_id' => 'integer',
+        'score_obtained' => 'integer',
+        'max_score' => 'integer',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'attempt_number' => 'integer',
     ];
+
 
     public function student()
     {
@@ -40,8 +41,8 @@ class StudentActivityAttempt extends Model
         return $this->belongsTo(Activity::class);
     }
 
-    public function questionAttempts()
+    public function itemAttempts()
     {
-        return $this->hasMany(StudentQuestionAttempt::class);
+        return $this->hasMany(StudentItemAttempt::class, 'activity_attempt_id');
     }
 }

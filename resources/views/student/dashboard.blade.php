@@ -5,7 +5,7 @@
 // Estos vendrían del controlador realmente
 // $student, $overallProgress, $nextActivity, $lessons...
 $overallProgress = $overallProgress ?? 45; // %
-$lessons = $lessons ?? collect(); // colección de lecciones
+// $lessons = $lessons ?? collect(); // colección de lecciones
 @endphp
 
 {{-- Saludo + progreso principal --}}
@@ -70,29 +70,6 @@ $lessons = $lessons ?? collect(); // colección de lecciones
         </h2>
         {{-- Aquí luego podrías poner un filtro simple o un “Ver todo” --}}
     </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        @forelse ($lessons as $lesson)
-        @php
-        // Ejemplos de datos, en la realidad deberían venir del modelo:
-        $icon = $lesson->icon ?? '📚';
-        $subtitle = $lesson->subtitle ?? "{$lesson->activities_count} actividades";
-        $progress = $lesson->progress_percent ?? 0;
-        @endphp
-
-        <x-ui.kid-card :clickable="true" title="{{ $lesson->title }}" subtitle="{{ $subtitle }}"
-            onclick="window.location='{{ route('student.lessons.show', $lesson) }}'">
-            <x-slot name="icon">
-                {{ $icon }}
-            </x-slot>
-
-            <x-ui.kid-progress :percent="$progress" label="Progreso" :small="true" />
-        </x-ui.kid-card>
-        @empty
-        <p class="text-sm text-text-muted col-span-full">
-            Aún no tienes lecciones asignadas. Tu docente las verá pronto aquí.
-        </p>
-        @endforelse
-    </div>
+    @livewire('student.dashboard')
 </section>
 @endsection

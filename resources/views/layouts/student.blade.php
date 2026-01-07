@@ -18,8 +18,9 @@
     <header class="w-full border-b border-neutral-200/70 bg-surface/90 backdrop-blur-sm">
       <div class="mx-auto w-full max-w-5xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
         {{-- Logo + nombre app --}}
-        <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-2xl bg-primary-500 flex items-center justify-center shadow-md">
+        <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3">
+          <div href="{{ route('student.dashboard') }}" 
+            class="h-9 w-9 rounded-2xl bg-primary-500 flex items-center justify-center shadow-md">
             <span class="text-lg font-extrabold text-white tracking-tight">EA</span>
           </div>
           <div class="leading-tight">
@@ -30,7 +31,7 @@
               Aprender inglés jugando
             </p>
           </div>
-        </div>
+        </a>
 
         {{-- Info del estudiante (placeholder: usa tus datos reales) --}}
         <div class="flex items-center gap-3">
