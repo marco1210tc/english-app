@@ -17,6 +17,7 @@
         </div>
     @endif
 
+
     {{-- FLASHCARDS --}}
     @if($state === 'flashcards')
         @php $c = $flashcards[$flashIndex] ?? null; @endphp
@@ -35,16 +36,17 @@
                 <div class="text-sm text-slate-500">
                     Aprende ({{ $flashIndex+1 }}/{{ count($flashcards) }})
                 </div>
-                <a href="{{ route('student.lessons.index') }}"
-                   class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+
+                <button type="button" wire:click="exitSession"
+                        class="text-sm font-semibold text-slate-600 hover:text-slate-900">
                     Salir ✖
-                </a>
+                </button>
             </div>
 
             <div class="mt-5">
                 @if(!empty($c['image_path']))
                     <img src="{{ asset('storage/'.$c['image_path']) }}"
-                         alt="{{ $c['word_en'] }}"
+                         alt="{{ $c['word_en'] ?? '' }}"
                          class="w-full max-h-72 object-contain rounded-3xl bg-slate-50 border" />
                 @else
                     <div class="w-full h-56 rounded-3xl bg-slate-50 border flex items-center justify-center text-slate-500 text-lg">
@@ -80,7 +82,8 @@
         </div>
     @endif
 
-    {{-- LISTEN & CHOOSE --}}
+
+    {{-- LISTENING --}}
     @if($state === 'listening')
         @php
             $item = $listenItems[$listenIndex] ?? null;
@@ -97,7 +100,6 @@
                     el.play().catch(()=>{});
                 },
                 revealCorrect(correctId){
-                    // agrega una clase visual a la opción correcta
                     document.querySelectorAll('[data-opt-id]').forEach(btn => {
                         if(parseInt(btn.dataset.optId) === parseInt(correctId)){
                             btn.classList.add('ring-4','ring-slate-900');
@@ -113,10 +115,11 @@
                 <div class="text-sm text-slate-500">
                     Escucha y elige ({{ $listenIndex+1 }}/{{ count($listenItems) }})
                 </div>
-                <a href="{{ route('student.lessons.index') }}"
-                   class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+
+                <button type="button" wire:click="exitSession"
+                        class="text-sm font-semibold text-slate-600 hover:text-slate-900">
                     Salir ✖
-                </a>
+                </button>
             </div>
 
             <div class="mt-3 flex items-center justify-between">
@@ -134,7 +137,7 @@
                 </audio>
             @endif
 
-            {{-- Feedback --}}
+            {{-- feedback --}}
             @if($lastFeedback === 'wrong')
                 <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
                     Ups… intenta otra vez 🙂
@@ -146,17 +149,17 @@
                 </div>
             @endif
 
-            {{-- Opciones grandes --}}
+            {{-- opciones --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
                 @foreach($options as $i => $opt)
                     @php
-                        $hidden = in_array((int)$opt['id'], array_map('intval',$listenHidden), true);
+                        $hidden = in_array((int)($opt['id'] ?? 0), array_map('intval', $listenHidden), true);
                     @endphp
 
                     <button
                         wire:click="pickListenOption({{ $i }})"
                         wire:loading.attr="disabled"
-                        data-opt-id="{{ (int)$opt['id'] }}"
+                        data-opt-id="{{ (int)($opt['id'] ?? 0) }}"
                         class="rounded-3xl border p-5 sm:p-6 text-left hover:bg-slate-50 disabled:opacity-60 {{ $hidden ? 'hidden' : '' }}"
                     >
                         <div class="flex items-center gap-4">
@@ -165,26 +168,28 @@
                             </div>
 
                             <div class="flex-1">
-                                <div class="text-lg sm:text-xl font-extrabold">{{ $opt['word_en'] }}</div>
-                                <div class="text-slate-600 font-semibold">{{ $opt['translation_es'] }}</div>
+                                <div class="text-lg sm:text-xl font-extrabold">{{ $opt['word_en'] ?? '' }}</div>
+                                <div class="text-slate-600 font-semibold">{{ $opt['translation_es'] ?? '' }}</div>
                             </div>
                         </div>
                     </button>
                 @endforeach
             </div>
 
-            {{-- hint suave visual --}}
             <div class="mt-4 text-sm text-slate-500">
                 Pistas usadas: {{ $listenHintsUsed }}
             </div>
         </div>
     @endif
 
-    {{-- MATCHING (placeholder por ahora, estado ya listo) --}}
+
+    {{-- MATCHING (placeholder; NO lo borramos) --}}
     @if($state === 'matching')
         <div class="rounded-3xl bg-white border p-6">
             <div class="text-2xl font-extrabold">Emparejar 🧩</div>
-            <div class="text-slate-600 mt-2">Une palabra con imagen.</div>
+            <div class="text-slate-600 mt-2">
+                (Por ahora placeholder). Luego lo mejoramos con “imagen vs imagen”.
+            </div>
 
             <div class="mt-6 flex justify-end">
                 <button wire:click="nextMatching"
@@ -195,20 +200,83 @@
         </div>
     @endif
 
-    {{-- MINI QUIZ (placeholder) --}}
-    @if($state === 'multiple_choice')
-        <div class="rounded-3xl bg-white border p-6">
-            <div class="text-2xl font-extrabold">Mini-quiz 📝</div>
-            <div class="text-slate-600 mt-2">Responde 5 preguntas.</div>
 
-            <div class="mt-6 flex justify-end">
-                <button wire:click="nextQuiz"
-                        class="rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
-                    Terminar ⭐
+    {{-- MULTIPLE CHOICE --}}
+    @if($state === 'multiple_choice')
+        @php
+            $q = $quizQuestions[$quizIndex] ?? null;
+            $opts = $q['options'] ?? [];
+        @endphp
+
+        <div class="rounded-3xl bg-white border p-6"
+             x-data="{
+                highlight(correctId){
+                    document.querySelectorAll('[data-mc-id]').forEach(btn => {
+                        if(parseInt(btn.dataset.mcId) === parseInt(correctId)){
+                            btn.classList.add('ring-4','ring-slate-900');
+                        }
+                    });
+                }
+             }"
+             x-on:quiz:highlight-correct.window="highlight($event.detail.correctId)"
+             x-on:quiz:reveal-correct.window="highlight($event.detail.correctId)">
+
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-500">
+                    Mini-quiz ({{ $quizIndex+1 }}/{{ max(1, count($quizQuestions)) }})
+                </div>
+
+                <button type="button" wire:click="exitSession"
+                        class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+                    Salir ✖
                 </button>
+            </div>
+
+            <div class="mt-4 text-2xl sm:text-3xl font-extrabold">
+                {{ $q['prompt'] ?? 'Elige la respuesta correcta' }}
+            </div>
+
+            {{-- feedback --}}
+            @if($quizFeedback === 'wrong')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    Ups… intenta otra vez 🙂
+                    <div class="text-sm text-slate-500 mt-1">Intento {{ $quizAttemptNo-1 }} de 3</div>
+                </div>
+            @elseif($quizFeedback === 'correct')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    ¡Correcto! ✅
+                </div>
+            @endif
+
+            <div class="grid grid-cols-1 gap-3 mt-5">
+                @foreach($opts as $i => $opt)
+                    <button
+                        wire:click="pickQuizOption({{ $i }})"
+                        wire:loading.attr="disabled"
+                        data-mc-id="{{ (int)($opt['id'] ?? 0) }}"
+                        class="rounded-3xl border p-5 text-left hover:bg-slate-50 disabled:opacity-60"
+                    >
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xl font-extrabold">
+                                {{ $i+1 }}
+                            </div>
+
+                            <div class="flex-1">
+                                <div class="text-lg sm:text-xl font-extrabold">
+                                    {{ $opt['text'] ?? '' }}
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                @endforeach
+            </div>
+
+            <div class="mt-4 text-sm text-slate-500">
+                Pistas usadas: {{ $quizHintsUsed }}
             </div>
         </div>
     @endif
+
 
     {{-- SUMMARY --}}
     @if($state === 'summary')
@@ -218,11 +286,16 @@
                 Terminaste la sesión.
             </div>
 
-            <div class="mt-6">
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
                 <a href="{{ route('student.lessons.index') }}"
                    class="inline-flex items-center justify-center rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
                     Volver a mis lecciones
                 </a>
+
+                <button wire:click="$set('state','intro')"
+                        class="inline-flex items-center justify-center rounded-3xl px-8 py-4 bg-white border font-extrabold text-lg">
+                    Repetir 🔁
+                </button>
             </div>
         </div>
     @endif
