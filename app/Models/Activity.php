@@ -28,7 +28,7 @@ class Activity extends Model
 
     public function questions()
     {
-        return $this->hasMany(Question::class)->orderBy('order');
+        return $this->hasMany(Question::class)->orderBy('order_index');
     }
 
     public function attempts()
