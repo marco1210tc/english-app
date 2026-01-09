@@ -4,10 +4,7 @@ namespace App\Livewire\Student\Session;
 
 use Livewire\Component;
 use App\Services\StudentSession\SessionContentBuilder;
-use App\Services\StudentSession\AttemptTracker;
-use App\Services\StudentSession\Games\ListeningGame;
-use App\Services\StudentSession\Games\MatchingGame;
-use App\Services\StudentSession\Games\MultipleChoiceGame;
+use App\Services\StudentSession\SessionTracker;
 
 class Player extends Component
 {
@@ -15,69 +12,59 @@ class Player extends Component
 
     public string $state = 'intro';
 
-    // FLASHgit 
+    // flash
     public int $flashIndex = 0;
     public array $flashcards = [];
 
-    // LISTENING
+    // listening
     public int $listenIndex = 0;
     public array $listenItems = [];
     public int $listenAttemptNo = 1;
     public int $listenHintsUsed = 0;
-    public array $listenHidden = [];
+    public array $listenHidden = []; // vocab ids a ocultar
     public bool $listenLocked = false;
     public ?string $lastFeedback = null;
 
-    // MATCHING
+    // matching
     public array $matchPairs = [];
     public array $matchCards = [];
-    public array $matchSolved = [];
-    public array $matchHiddenCards = [];
+    public array $matchSolved = [];       // card_ids resueltos
+    public array $matchHiddenCards = [];  // card_ids ocultos (pista)
     public ?int $matchFirst = null;
     public ?int $matchSecond = null;
     public int $matchAttemptNo = 1;
     public int $matchHintsUsed = 0;
     public bool $matchLocked = false;
-    public ?string $matchFeedback = null;
+    public ?string $matchFeedback = null; // correct|wrong|null
+    public array $matchHintPair = []; // card_ids a resaltar (pista)
 
-    // QUIZ
+    // quiz
     public array $quizQuestions = [];
     public int $quizIndex = 0;
     public int $quizAttemptNo = 1;
     public int $quizHintsUsed = 0;
     public bool $quizLocked = false;
-    public ?string $quizFeedback = null;
+    public ?string $quizFeedback = null; // correct|wrong|null
 
-    // Tracking
+    // tracking
+    public ?int $activityAttemptId = null;
+    public ?int $itemStartedAtTs = null;
+
+    // activity ids (por item_type.key)
     public ?int $activityIdListening = null;
     public ?int $activityIdMatching  = null;
     public ?int $activityIdQuiz      = null;
 
-    public ?int $activityAttemptId = null;
-    public ?int $itemStartedAtTs = null;
-
-    // cache assignment
+    // cached
     private $assignment;
-
-    // services
+    private $vocab;
     private SessionContentBuilder $builder;
-    private AttemptTracker $tracker;
-    private ListeningGame $listeningGame;
-    private MatchingGame $matchingGame;
-    private MultipleChoiceGame $mcGame;
+    private SessionTracker $tracker;
 
-    public function boot(
-        SessionContentBuilder $builder,
-        AttemptTracker $tracker,
-        ListeningGame $listeningGame,
-        MatchingGame $matchingGame,
-        MultipleChoiceGame $mcGame
-    ): void {
+    public function boot(SessionContentBuilder $builder, SessionTracker $tracker): void
+    {
         $this->builder = $builder;
         $this->tracker = $tracker;
-        $this->listeningGame = $listeningGame;
-        $this->matchingGame = $matchingGame;
-        $this->mcGame = $mcGame;
     }
 
     public function mount(int $assignmentId): void
@@ -88,32 +75,29 @@ class Player extends Component
 
         $this->assignment = $this->builder->loadAssignmentForStudent(
             assignmentId: $assignmentId,
-            studentClassroomId: (int)$student->classroom_id
+            classroomId: (int) $student->classroom_id
         );
 
-        $lesson = $this->assignment->lesson;
-        $vocab = $lesson->vocabulary;
+        $this->vocab = $this->assignment->lesson->vocabulary ?? collect();
 
-        // flashcards
-        $this->flashcards = $this->builder->buildFlashcards($vocab, 5);
+        $this->flashcards  = $this->builder->buildFlashcards($this->vocab, 5);
+        $this->listenItems = $this->builder->buildListeningItems($this->vocab, 8);
 
-        // listening
-        $this->listenItems = $this->listeningGame->buildItems($vocab->take(8));
+        [$pairs, $cards] = $this->builder->buildMatching($this->vocab, 6);
+        $this->matchPairs = $pairs;
+        $this->matchCards = $cards;
 
-        // matching (6 vocab -> 12 cards)
-        $m = $this->matchingGame->buildFromVocab($vocab->take(6));
-        $this->matchPairs = $m['pairs'];
-        $this->matchCards = $m['cards'];
+        $activities = $this->assignment->lesson->activities ?? collect();
 
-        // activity ids
-        $ids = $this->builder->resolveActivityIds($lesson);
-        $this->activityIdListening = $ids['listening'];
-        $this->activityIdMatching  = $ids['matching'];
-        $this->activityIdQuiz      = $ids['quiz'];
+        $listening = $activities->first(fn($a) => optional($a->itemType)->key === 'listening') ?? $activities->first();
+        $matching  = $activities->first(fn($a) => optional($a->itemType)->key === 'matching');
+        $quiz      = $activities->first(fn($a) => optional($a->itemType)->key === 'multiple_choice');
 
-        // quiz questions
-        $quizActivity = $lesson->activities?->first(fn($a) => optional($a->itemType)->key === 'multiple_choice');
-        $this->quizQuestions = $this->mcGame->buildFromActivity($quizActivity);
+        $this->activityIdListening = $listening?->id;
+        $this->activityIdMatching  = $matching?->id;
+        $this->activityIdQuiz      = $quiz?->id;
+
+        $this->quizQuestions = $this->builder->buildQuizQuestions($quiz, $this->vocab, 5);
     }
 
     public function start(): void
@@ -129,74 +113,50 @@ class Player extends Component
             return;
         }
 
-        $attempt = $this->tracker->startOrReuseAttempt((int)$student->id, (int)$baseActivityId);
-        $this->activityAttemptId = (int)$attempt->id;
+        $attempt = $this->tracker->startOrResumeAttempt((int)$student->id, (int)$baseActivityId);
+        $this->activityAttemptId = $attempt->id;
 
         $this->state = 'flashcards';
         $this->flashIndex = 0;
         $this->itemStartedAtTs = now()->timestamp;
     }
 
-    // ---------------- shared tracking helper ----------------
-
-    private function secondsSinceStart(): int
-    {
-        if (!$this->itemStartedAtTs) return 0;
-        return max(0, now()->timestamp - $this->itemStartedAtTs);
-    }
-
-    private function track(string $itemKey, bool $isCorrect, int $attempts, int $hintsUsed, array $response): void
-    {
-        if (!$this->activityAttemptId) return;
-
-        $this->tracker->storeItemAttempt(
-            activityAttemptId: (int)$this->activityAttemptId,
-            itemKey: $itemKey,
-            isCorrect: $isCorrect,
-            attempts: $attempts,
-            hintsUsed: $hintsUsed,
-            timeSpentSeconds: $this->secondsSinceStart(),
-            response: $response
-        );
-    }
-
-    // ---------------- FLASH ----------------
+    // ---------------- FLASHCARDS ----------------
 
     public function nextFlashcard(): void
     {
         if ($this->state !== 'flashcards') return;
 
         $this->track(
-            itemKey: 'flash_'.$this->flashIndex,
+            itemKey: 'flash_' . $this->flashIndex,
             isCorrect: true,
             attempts: 1,
-            hintsUsed: 0,
-            response: ['type' => 'flashcard', 'vocab_id' => $this->flashcards[$this->flashIndex]['id'] ?? null]
+            hints: 0,
+            response: [
+                'type' => 'flashcard',
+                'vocab_id' => $this->flashcards[$this->flashIndex]['id'] ?? null,
+            ]
         );
 
         $this->flashIndex++;
 
         if ($this->flashIndex >= count($this->flashcards)) {
-            $this->state = 'listening';
-            $this->listenIndex = 0;
-            $this->resetListeningState();
-            $this->itemStartedAtTs = now()->timestamp;
+            $this->goToListening();
             return;
         }
 
         $this->itemStartedAtTs = now()->timestamp;
     }
 
-    // ---------------- LISTENING ----------------
-
-    private function resetListeningState(): void
+    private function goToListening(): void
     {
-        $this->listenAttemptNo = 1;
-        $this->listenHintsUsed = 0;
-        $this->listenHidden = [];
-        $this->listenLocked = false;
-        $this->lastFeedback = null;
+        $this->state = 'listening';
+        $this->listenIndex = 0;
+        $this->resetListenState();
+        $this->itemStartedAtTs = now()->timestamp;
     }
+
+    // ---------------- LISTENING ----------------
 
     public function pickListenOption(int $optIndex): void
     {
@@ -215,10 +175,10 @@ class Player extends Component
         $isCorrect = $picked && ((int)$picked['id'] === (int)($item['target']['id'] ?? 0));
 
         $this->track(
-            itemKey: 'listening_'.$this->listenIndex,
+            itemKey: 'listening_' . $this->listenIndex,
             isCorrect: $isCorrect,
             attempts: $this->listenAttemptNo,
-            hintsUsed: $this->listenHintsUsed,
+            hints: $this->listenHintsUsed,
             response: [
                 'type' => 'listening',
                 'target_vocab_id' => $item['target']['id'] ?? null,
@@ -231,13 +191,11 @@ class Player extends Component
         if ($isCorrect) {
             $this->lastFeedback = 'correct';
             $this->listenIndex++;
-
             if ($this->listenIndex >= count($this->listenItems)) {
                 $this->goToMatching();
                 return;
             }
-
-            $this->resetListeningState();
+            $this->resetListenState();
             $this->itemStartedAtTs = now()->timestamp;
             return;
         }
@@ -245,13 +203,13 @@ class Player extends Component
         $this->lastFeedback = 'wrong';
 
         if ($this->listenAttemptNo === 1) {
-            $this->listenHintsUsed++;
+            $this->listenHintsUsed += 1;
             $this->dispatch('listen:play-audio');
         } elseif ($this->listenAttemptNo === 2) {
-            $this->listenHintsUsed++;
-            $this->listenHidden = $this->listeningGame->hideDistractors($item);
+            $this->listenHintsUsed += 1;
+            $this->applyHideDistractors();
         } else {
-            $this->listenHintsUsed++;
+            $this->listenHintsUsed += 1;
             $this->dispatch('listen:reveal-correct');
         }
 
@@ -260,16 +218,42 @@ class Player extends Component
         $this->itemStartedAtTs = now()->timestamp;
     }
 
+    private function resetListenState(): void
+    {
+        $this->listenAttemptNo = 1;
+        $this->listenHintsUsed = 0;
+        $this->listenHidden = [];
+        $this->listenLocked = false;
+        $this->lastFeedback = null;
+    }
+
+    private function applyHideDistractors(): void
+    {
+        $item = $this->listenItems[$this->listenIndex] ?? null;
+        if (!$item) return;
+
+        $targetId = (int)($item['target']['id'] ?? 0);
+
+        $distractors = [];
+        foreach (($item['options'] ?? []) as $opt) {
+            $id = (int)($opt['id'] ?? 0);
+            if ($id && $id !== $targetId) $distractors[] = $id;
+        }
+
+        shuffle($distractors);
+        $this->listenHidden = array_slice($distractors, 0, min(2, count($distractors)));
+    }
+
     // ---------------- MATCHING ----------------
 
     private function goToMatching(): void
     {
         $this->state = 'matching';
-        $this->resetMatchingState();
+        $this->resetMatchState();
         $this->itemStartedAtTs = now()->timestamp;
     }
 
-    private function resetMatchingState(): void
+    private function resetMatchState(): void
     {
         $this->matchSolved = [];
         $this->matchHiddenCards = [];
@@ -279,95 +263,125 @@ class Player extends Component
         $this->matchHintsUsed = 0;
         $this->matchLocked = false;
         $this->matchFeedback = null;
+        $this->matchHintPair = [];
     }
 
     public function pickMatchCard(int $cardId): void
     {
         if ($this->state !== 'matching') return;
         if ($this->matchLocked) return;
-
         if (in_array($cardId, $this->matchSolved, true)) return;
         if (in_array($cardId, $this->matchHiddenCards, true)) return;
+
+        // si ya está seleccionada como first, no hacer nada
         if ($this->matchFirst === $cardId) return;
 
         if ($this->matchFirst === null) {
             $this->matchFirst = $cardId;
+            $this->matchFeedback = null;
             return;
         }
 
+        // segunda carta
         $this->matchSecond = $cardId;
         $this->matchLocked = true;
 
-        $isCorrect = $this->matchingGame->pickCard($this->matchCards, (int)$this->matchFirst, (int)$this->matchSecond);
+        $first  = $this->findCard($this->matchFirst);
+        $second = $this->findCard($this->matchSecond);
 
-        $first = $this->matchingGame->findCard($this->matchCards, (int)$this->matchFirst);
-        $second = $this->matchingGame->findCard($this->matchCards, (int)$this->matchSecond);
-        $pairKey = $first['pair_key'] ?? ('card_'.$this->matchFirst);
+        $isCorrect = $first && $second && ($first['pair_key'] === $second['pair_key']);
 
         $this->track(
-            itemKey: 'match_'.$pairKey,
+            itemKey: 'matching_' . $this->matchFirst . '_' . $this->matchSecond,
             isCorrect: $isCorrect,
             attempts: $this->matchAttemptNo,
-            hintsUsed: $this->matchHintsUsed,
+            hints: $this->matchHintsUsed,
             response: [
                 'type' => 'matching',
-                'pair_key' => $pairKey,
                 'first_card_id' => $this->matchFirst,
                 'second_card_id' => $this->matchSecond,
-                'first_vocab_id' => $first['vocab_id'] ?? null,
-                'second_vocab_id' => $second['vocab_id'] ?? null,
-                'attempt_no' => $this->matchAttemptNo,
+                'pair_key_first' => $first['pair_key'] ?? null,
+                'pair_key_second' => $second['pair_key'] ?? null,
             ]
         );
 
         if ($isCorrect) {
             $this->matchFeedback = 'correct';
-            $this->matchSolved[] = (int)$this->matchFirst;
-            $this->matchSolved[] = (int)$this->matchSecond;
+            $this->matchSolved[] = $this->matchFirst;
+            $this->matchSolved[] = $this->matchSecond;
 
-            $this->matchFirst = null;
-            $this->matchSecond = null;
-            $this->matchAttemptNo = 1;
-            $this->matchLocked = false;
-            $this->itemStartedAtTs = now()->timestamp;
+            $this->resetMatchSelection();
 
+            // completo
             if (count($this->matchSolved) >= count($this->matchCards)) {
                 $this->goToQuiz();
+                return;
             }
+
+            $this->matchLocked = false;
+            $this->itemStartedAtTs = now()->timestamp;
             return;
         }
 
+        // incorrecto: pista por intentos
         $this->matchFeedback = 'wrong';
 
         if ($this->matchAttemptNo === 1) {
-            $this->matchHintsUsed++;
+            $this->matchHintsUsed += 1;
+            $this->dispatch('match:shake');
         } elseif ($this->matchAttemptNo === 2) {
-            $this->matchHintsUsed++;
-            $this->matchHiddenCards = array_values(array_unique(array_merge(
-                $this->matchHiddenCards,
-                $this->matchingGame->hideDistractorCards($this->matchCards, $this->matchSolved, $this->matchFirst, $this->matchSecond)
-            )));
+            $this->matchHintsUsed += 1;
+            $this->hintMatchingPairForSelected();
         } else {
-            $this->matchHintsUsed++;
+            $this->matchHintsUsed += 1;
+            $this->dispatch('match:hint');
         }
 
         $this->matchAttemptNo = min(3, $this->matchAttemptNo + 1);
 
-        $this->dispatch('match:wrong');
-        // desbloquea cuando el frontend llame resetWrongMatch()
+        // desbloquea y limpia selección después de “mostrar”
+        $this->resetMatchSelection();
+        $this->matchLocked = false;
+        $this->itemStartedAtTs = now()->timestamp;
     }
 
-    public function resetWrongMatch(): void
+    private function resetMatchSelection(): void
     {
-        if ($this->state !== 'matching') return;
-
-        if ($this->matchFeedback === 'wrong') {
-            $this->matchFirst = null;
-            $this->matchSecond = null;
-            $this->matchLocked = false;
-            $this->itemStartedAtTs = now()->timestamp;
-        }
+        $this->matchFirst = null;
+        $this->matchSecond = null;
     }
+
+    private function findCard(int $cardId): ?array
+    {
+        foreach ($this->matchCards as $c) {
+            if ((int)$c['card_id'] === (int)$cardId) return $c;
+        }
+        return null;
+    }
+
+    private function hintMatchingPairForSelected(): void
+    {
+        if ($this->matchFirst === null) return;
+
+        $first = $this->findCard($this->matchFirst);
+        if (!$first) return;
+
+        $pairKey = $first['pair_key'] ?? null;
+        if (!$pairKey) return;
+
+        $ids = collect($this->matchCards)
+            ->filter(
+                fn($c) => ($c['pair_key'] ?? null) === $pairKey &&
+                    !in_array((int)$c['card_id'], $this->matchSolved, true)
+            )
+            ->pluck('card_id')
+            ->map(fn($x) => (int)$x)
+            ->values()
+            ->all();
+
+        $this->matchHintPair = $ids; // normalmente 2 ids
+    }
+
 
     // ---------------- QUIZ ----------------
 
@@ -396,22 +410,23 @@ class Player extends Component
 
         $q = $this->quizQuestions[$this->quizIndex] ?? null;
         if (!$q) {
-            $this->finishCompleted();
-            $this->state = 'summary';
+            $this->finishAndGoSummary();
             return;
         }
 
-        $picked = ($q['options'] ?? [])[$optIndex] ?? null;
+        $options = $q['options'] ?? [];
+        $picked  = $options[$optIndex] ?? null;
+
         $correctId = (int)($q['correct_option_id'] ?? 0);
-        $pickedId = (int)($picked['id'] ?? 0);
+        $pickedId  = (int)($picked['id'] ?? 0);
 
         $isCorrect = $pickedId && $correctId && ($pickedId === $correctId);
 
         $this->track(
-            itemKey: 'mc_'.$this->quizIndex,
+            itemKey: 'mc_' . $this->quizIndex,
             isCorrect: $isCorrect,
             attempts: $this->quizAttemptNo,
-            hintsUsed: $this->quizHintsUsed,
+            hints: $this->quizHintsUsed,
             response: [
                 'type' => 'multiple_choice',
                 'question_id' => $q['id'] ?? null,
@@ -427,8 +442,7 @@ class Player extends Component
             $this->quizIndex++;
 
             if ($this->quizIndex >= count($this->quizQuestions)) {
-                $this->finishCompleted();
-                $this->state = 'summary';
+                $this->finishAndGoSummary();
                 return;
             }
 
@@ -440,13 +454,13 @@ class Player extends Component
         $this->quizFeedback = 'wrong';
 
         if ($this->quizAttemptNo === 1) {
-            $this->quizHintsUsed++;
+            $this->quizHintsUsed += 1;
             $this->dispatch('quiz:shake');
         } elseif ($this->quizAttemptNo === 2) {
-            $this->quizHintsUsed++;
+            $this->quizHintsUsed += 1;
             $this->dispatch('quiz:highlight-correct', correctId: $correctId);
         } else {
-            $this->quizHintsUsed++;
+            $this->quizHintsUsed += 1;
             $this->dispatch('quiz:reveal-correct', correctId: $correctId);
         }
 
@@ -455,18 +469,38 @@ class Player extends Component
         $this->itemStartedAtTs = now()->timestamp;
     }
 
-    // ---------------- FINISH / EXIT ----------------
+    private function finishAndGoSummary(): void
+    {
+        if ($this->activityAttemptId) {
+            $this->tracker->finishCompleted($this->activityAttemptId);
+        }
+        $this->state = 'summary';
+    }
 
-    private function finishCompleted(): void
+    // ---------------- SHARED ----------------
+
+    private function track(string $itemKey, bool $isCorrect, int $attempts, int $hints, array $response): void
     {
         if (!$this->activityAttemptId) return;
-        $this->tracker->finishAsCompleted((int)$this->activityAttemptId);
+
+        $this->tracker->storeItemAttempt(
+            activityAttemptId: $this->activityAttemptId,
+            itemKey: $itemKey,
+            isCorrect: $isCorrect,
+            attempts: $attempts,
+            hintsUsed: $hints,
+            response: $response,
+            itemStartedAtTs: $this->itemStartedAtTs
+        );
+
+        // reinicia timer por defecto
+        $this->itemStartedAtTs = now()->timestamp;
     }
 
     public function exitSession()
     {
         if ($this->activityAttemptId) {
-            $this->tracker->finishAsAbandoned((int)$this->activityAttemptId);
+            $this->tracker->finishAbandoned($this->activityAttemptId);
         }
         return redirect()->route('student.lessons.index');
     }
