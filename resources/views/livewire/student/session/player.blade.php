@@ -1,381 +1,353 @@
 <div class="grid gap-4">
 
-  {{-- INTRO --}}
-  @if($state === 'intro')
-    <div class="rounded-3xl bg-white border p-6">
-      <div class="text-2xl sm:text-3xl font-extrabold">¡Vamos a practicar! 🎧</div>
-      <div class="text-slate-600 mt-2 text-base sm:text-lg">Es fácil: mira, escucha y toca.</div>
+    {{-- INTRO --}}
+    @if($state === 'intro')
+        <div class="rounded-3xl bg-white border p-6">
+            <div class="text-2xl sm:text-3xl font-extrabold">¡Vamos a practicar! 🎧</div>
+            <div class="text-slate-600 mt-2 text-base sm:text-lg">Es fácil: mira, escucha y toca.</div>
 
-      <div class="mt-6">
-        <button wire:click="start"
-          class="w-full sm:w-auto rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
-          Empezar 🚀
-        </button>
-      </div>
-    </div>
-  @endif
-
-
-  {{-- FLASHCARDS --}}
-  @if($state === 'flashcards')
-    @php $c = $flashcards[$flashIndex] ?? null; @endphp
-
-    <div class="rounded-3xl bg-white border p-6"
-      x-data="{ play(){ const el=this.$refs.audioEl; if(!el) return; el.currentTime=0; el.play().catch(()=>{});} }">
-
-      <div class="flex items-center justify-between">
-        <div class="text-sm text-slate-500">
-          Aprende ({{ $flashIndex+1 }}/{{ count($flashcards) }})
-        </div>
-
-        <button type="button" wire:click="exitSession"
-          class="text-sm font-semibold text-slate-600 hover:text-slate-900">
-          Salir ✖
-        </button>
-      </div>
-
-      <div class="mt-5">
-        @if(!empty($c['image_path']))
-          <img src="{{ asset('storage/'.$c['image_path']) }}" alt="{{ $c['word_en'] }}"
-            class="w-full max-h-72 object-contain rounded-3xl bg-slate-50 border" />
-        @else
-          <div class="w-full h-56 rounded-3xl bg-slate-50 border flex items-center justify-center text-slate-500 text-lg">
-            (sin imagen)
-          </div>
-        @endif
-      </div>
-
-      <div class="mt-5 text-center">
-        <div class="text-4xl sm:text-5xl font-extrabold">{{ $c['word_en'] ?? '' }}</div>
-        <div class="text-slate-600 mt-2 text-xl sm:text-2xl font-semibold">{{ $c['translation_es'] ?? '' }}</div>
-      </div>
-
-      <div class="mt-6 flex justify-center">
-        <button type="button" @click="play()"
-          class="rounded-3xl px-8 py-4 bg-white border font-extrabold text-lg hover:bg-slate-50">
-          🔊 Escuchar
-        </button>
-      </div>
-
-      @if(!empty($c['audio_path']))
-        <audio x-ref="audioEl">
-          <source src="{{ asset('storage/'.$c['audio_path']) }}" type="audio/mpeg">
-        </audio>
-      @endif
-
-      <div class="mt-8 flex justify-end">
-        <button wire:click="nextFlashcard"
-          class="rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
-          Siguiente ▶
-        </button>
-      </div>
-    </div>
-  @endif
-
-
-  {{-- LISTENING --}}
-  @if($state === 'listening')
-    @php
-      $item = $listenItems[$listenIndex] ?? null;
-      $target = $item['target'] ?? null;
-      $options = $item['options'] ?? [];
-    @endphp
-
-    <div class="rounded-3xl bg-white border p-6"
-      x-data="{
-        play(){ const el=this.$refs.audioEl; if(!el) return; el.currentTime=0; el.play().catch(()=>{}); },
-        revealCorrect(correctId){
-          document.querySelectorAll('[data-opt-id]').forEach(btn=>{
-            if(parseInt(btn.dataset.optId)===parseInt(correctId)){
-              btn.classList.add('ring-4','ring-slate-900');
-            }
-          });
-        }
-      }"
-      x-init="$nextTick(() => play())"
-      x-on:listen:play-audio.window="play()"
-      x-on:listen:reveal-correct.window="revealCorrect({{ (int)($target['id'] ?? 0) }})"
-    >
-
-      <div class="flex items-center justify-between">
-        <div class="text-sm text-slate-500">
-          Escucha y elige ({{ $listenIndex+1 }}/{{ max(1,count($listenItems)) }})
-        </div>
-
-        <button type="button" wire:click="exitSession"
-          class="text-sm font-semibold text-slate-600 hover:text-slate-900">
-          Salir ✖
-        </button>
-      </div>
-
-      <div class="mt-3 flex items-center justify-between">
-        <div class="text-xl sm:text-2xl font-extrabold">🔊 Escucha</div>
-
-        <button type="button" @click="play()"
-          class="rounded-2xl px-4 py-2 bg-white border font-bold hover:bg-slate-50">
-          Repetir
-        </button>
-      </div>
-
-      @if(!empty($target['audio_path']))
-        <audio x-ref="audioEl">
-          <source src="{{ asset('storage/'.$target['audio_path']) }}" type="audio/mpeg">
-        </audio>
-      @endif
-
-      @if($lastFeedback === 'wrong')
-        <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
-          Ups… intenta otra vez 🙂
-          <div class="text-sm text-slate-500 mt-1">Intento {{ $listenAttemptNo-1 }} de 3</div>
-        </div>
-      @elseif($lastFeedback === 'correct')
-        <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
-          ¡Correcto! ✅
-        </div>
-      @endif
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-        @foreach($options as $i => $opt)
-          @php
-            $hidden = in_array((int)($opt['id'] ?? 0), array_map('intval',$listenHidden), true);
-          @endphp
-
-          <button wire:click="pickListenOption({{ $i }})"
-            wire:loading.attr="disabled"
-            data-opt-id="{{ (int)($opt['id'] ?? 0) }}"
-            class="rounded-3xl border p-5 sm:p-6 text-left hover:bg-slate-50 disabled:opacity-60 {{ $hidden ? 'hidden' : '' }}"
-          >
-            <div class="flex items-center gap-4">
-              <div class="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xl font-extrabold">
-                {{ $i+1 }}
-              </div>
-              <div class="flex-1">
-                <div class="text-lg sm:text-xl font-extrabold">{{ $opt['word_en'] ?? '' }}</div>
-                <div class="text-slate-600 font-semibold">{{ $opt['translation_es'] ?? '' }}</div>
-              </div>
+            <div class="mt-6">
+                <button wire:click="start"
+                        class="w-full sm:w-auto rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
+                    Empezar 🚀
+                </button>
             </div>
-          </button>
-        @endforeach
-      </div>
-
-      <div class="mt-4 text-sm text-slate-500">
-        Pistas usadas: {{ $listenHintsUsed }}
-      </div>
-    </div>
-  @endif
-
-
-  {{-- MATCHING --}}
-  @if($state === 'matching')
-    @php
-      $total = count($matchCards);
-      $solved = count($matchSolved);
-    @endphp
-
-    <div class="rounded-3xl bg-white border p-6"
-      x-data="{
-        shake(){
-          const el = this.$refs.box;
-          if(!el) return;
-          el.classList.remove('animate-shake');
-          void el.offsetWidth;
-          el.classList.add('animate-shake');
-        }
-      }"
-      x-on:match:shake.window="shake()"
-      x-ref="box"
-    >
-      <div class="flex items-center justify-between">
-        <div class="text-sm text-slate-500">
-          Emparejar ({{ $solved }}/{{ $total }})
         </div>
+    @endif
 
-        <button type="button" wire:click="exitSession"
-          class="text-sm font-semibold text-slate-600 hover:text-slate-900">
-          Salir ✖
-        </button>
-      </div>
+    {{-- FLASHCARDS --}}
+    @if($state === 'flashcards')
+        @php $c = $flashcards[$flashIndex] ?? null; @endphp
 
-      <div class="mt-3">
-        <div class="text-2xl font-extrabold">Empareja las cartas 🧩</div>
-        <div class="text-slate-600 mt-1 font-semibold">
-          Toca dos cartas iguales.
-        </div>
-      </div>
+        <div class="rounded-3xl bg-white border p-6"
+             x-data="{
+                play(){
+                    const el = this.$refs.audioEl;
+                    if(!el) return;
+                    el.currentTime = 0;
+                    el.play().catch(()=>{});
+                }
+             }">
 
-      @if($matchFeedback === 'wrong')
-        <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
-          Casi 🙂 intenta otra vez
-          <div class="text-sm text-slate-500 mt-1">Intento {{ $matchAttemptNo-1 }} de 3</div>
-        </div>
-      @elseif($matchFeedback === 'correct')
-        <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
-          ¡Bien! ✅
-        </div>
-      @endif
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-500">
+                    Aprende ({{ $flashIndex+1 }}/{{ count($flashcards) }})
+                </div>
 
-      <div class="mt-5 grid grid-cols-3 sm:grid-cols-4 gap-3">
-        @foreach($matchCards as $card)
-          @php
-            $id = (int)$card['card_id'];
-            $isSolved = in_array($id, $matchSolved, true);
-            $isHidden = in_array($id, $matchHiddenCards, true);
-            $isSelected = ($matchFirst === $id) || ($matchSecond === $id);
-            $isHint = in_array($id, $matchHintPair ?? [], true);
-          @endphp
+                <button type="button" wire:click="exitSession"
+                        class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+                    Salir ✖
+                </button>
+            </div>
 
-          <button
-            wire:click="pickMatchCard({{ $id }})"
-            wire:loading.attr="disabled"
-            class="rounded-2xl border p-2 sm:p-3 bg-white hover:bg-slate-50 disabled:opacity-60
-              {{ $isSolved ? 'opacity-40' : '' }}
-              {{ $isHidden ? 'hidden' : '' }}
-              {{ $isSelected ? 'ring-4 ring-slate-900' : '' }}
-              {{ $isHint ? 'ring-4 ring-emerald-500' : '' }}
-            "
-          >
-            @if(!empty($card['image_path']))
-              <img src="{{ asset('storage/'.$card['image_path']) }}"
-                class="w-full aspect-square object-cover rounded-xl border bg-slate-50" />
-            @else
-              <div class="w-full aspect-square rounded-xl border bg-slate-50 flex items-center justify-center text-slate-500">
-                 {{ $card['label'] ?? 'Carta' }}
-              </div>
+            <div class="mt-5">
+                @if(!empty($c['image_path']))
+                    <img src="{{ asset('storage/'.$c['image_path']) }}"
+                         alt="{{ $c['word_en'] }}"
+                         class="w-full max-h-72 object-contain rounded-3xl bg-slate-50 border" />
+                @else
+                    <div class="w-full h-56 rounded-3xl bg-slate-50 border flex items-center justify-center text-slate-500 text-lg">
+                        (sin imagen)
+                    </div>
+                @endif
+            </div>
+
+            <div class="mt-5 text-center">
+                <div class="text-4xl sm:text-5xl font-extrabold">{{ $c['word_en'] ?? '' }}</div>
+                <div class="text-slate-600 mt-2 text-xl sm:text-2xl font-semibold">{{ $c['translation_es'] ?? '' }}</div>
+            </div>
+
+            <div class="mt-6 flex justify-center">
+                <button type="button" @click="play()"
+                        class="rounded-3xl px-8 py-4 bg-white border font-extrabold text-lg hover:bg-slate-50">
+                    🔊 Escuchar
+                </button>
+            </div>
+
+            @if(!empty($c['audio_path']))
+                <audio x-ref="audioEl">
+                    <source src="{{ asset('storage/'.$c['audio_path']) }}" type="audio/mpeg">
+                </audio>
             @endif
-          </button>
-        @endforeach
-      </div>
 
-      <div class="mt-4 text-sm text-slate-500">
-        Pistas usadas: {{ $matchHintsUsed }}
-      </div>
-
-      {{-- Animación simple shake --}}
-      <style>
-        .animate-shake { animation: shake 0.22s linear 1; }
-        @keyframes shake {
-          0%{ transform:translateX(0); }
-          25%{ transform:translateX(-6px); }
-          50%{ transform:translateX(6px); }
-          75%{ transform:translateX(-6px); }
-          100%{ transform:translateX(0); }
-        }
-      </style>
-    </div>
-  @endif
-
-
-  {{-- MULTIPLE CHOICE --}}
-  @if($state === 'multiple_choice')
-    @php
-      $q = $quizQuestions[$quizIndex] ?? null;
-      $opts = $q['options'] ?? [];
-    @endphp
-
-    <div class="rounded-3xl bg-white border p-6"
-      x-data="{
-        shake(){
-          const el = this.$refs.box;
-          if(!el) return;
-          el.classList.remove('animate-shake');
-          void el.offsetWidth;
-          el.classList.add('animate-shake');
-        },
-        highlightCorrect(correctId){
-          document.querySelectorAll('[data-qopt-id]').forEach(btn=>{
-            if(parseInt(btn.dataset.qoptId)===parseInt(correctId)){
-              btn.classList.add('ring-4','ring-slate-900');
-            }
-          });
-        }
-      }"
-      x-on:quiz:shake.window="shake()"
-      x-on:quiz:highlight-correct.window="highlightCorrect($event.detail.correctId)"
-      x-on:quiz:reveal-correct.window="highlightCorrect($event.detail.correctId)"
-      x-ref="box"
-    >
-      <div class="flex items-center justify-between">
-        <div class="text-sm text-slate-500">
-          Mini-quiz ({{ $quizIndex+1 }}/{{ max(1,count($quizQuestions)) }})
-        </div>
-
-        <button type="button" wire:click="exitSession"
-          class="text-sm font-semibold text-slate-600 hover:text-slate-900">
-          Salir ✖
-        </button>
-      </div>
-
-      <div class="mt-3">
-        <div class="text-2xl font-extrabold">Mini-quiz 📝</div>
-        <div class="text-slate-600 mt-1 font-semibold">
-          {{ $q['prompt'] ?? 'Responde' }}
-        </div>
-      </div>
-
-      @if($quizFeedback === 'wrong')
-        <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
-          Ups… intenta otra vez 🙂
-          <div class="text-sm text-slate-500 mt-1">Intento {{ $quizAttemptNo-1 }} de 3</div>
-        </div>
-      @elseif($quizFeedback === 'correct')
-        <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
-          ¡Correcto! ✅
-        </div>
-      @endif
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-        @foreach($opts as $i => $opt)
-          <button
-            wire:click="pickQuizOption({{ $i }})"
-            wire:loading.attr="disabled"
-            data-qopt-id="{{ (int)($opt['id'] ?? 0) }}"
-            class="rounded-3xl border p-5 sm:p-6 text-left hover:bg-slate-50 disabled:opacity-60"
-          >
-            <div class="flex items-center gap-4">
-              <div class="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xl font-extrabold">
-                {{ $i+1 }}
-              </div>
-              <div class="flex-1">
-                <div class="text-lg sm:text-xl font-extrabold">{{ $opt['text'] ?? '' }}</div>
-              </div>
+            <div class="mt-8 flex justify-end">
+                <button wire:click="nextFlashcard"
+                        class="rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
+                    Siguiente ▶
+                </button>
             </div>
-          </button>
-        @endforeach
-      </div>
+        </div>
+    @endif
 
-      <div class="mt-4 text-sm text-slate-500">
-        Pistas usadas: {{ $quizHintsUsed }}
-      </div>
+    {{-- LISTENING --}}
+    @if($state === 'listening')
+        @php
+            $item = $listenItems[$listenIndex] ?? null;
+            $target = $item['target'] ?? null;
+            $options = $item['options'] ?? [];
+        @endphp
 
-      <style>
-        .animate-shake { animation: shake 0.22s linear 1; }
-        @keyframes shake {
-          0%{ transform:translateX(0); }
-          25%{ transform:translateX(-6px); }
-          50%{ transform:translateX(6px); }
-          75%{ transform:translateX(-6px); }
-          100%{ transform:translateX(0); }
-        }
-      </style>
-    </div>
-  @endif
+        <div class="rounded-3xl bg-white border p-6"
+             x-data="{
+                play(){
+                    const el = this.$refs.audioEl;
+                    if(!el) return;
+                    el.currentTime = 0;
+                    el.play().catch(()=>{});
+                },
+                revealCorrect(correctId){
+                    document.querySelectorAll('[data-opt-id]').forEach(btn => {
+                        if(parseInt(btn.dataset.optId) === parseInt(correctId)){
+                            btn.classList.add('ring-4','ring-slate-900');
+                        }
+                    });
+                }
+             }"
+             x-init="$nextTick(() => play())"
+             x-on:listen:play-audio.window="play()"
+             x-on:listen:reveal-correct.window="revealCorrect({{ (int)($target['id'] ?? 0) }})">
 
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-500">
+                    Escucha y elige ({{ $listenIndex+1 }}/{{ count($listenItems) }})
+                </div>
+                <button type="button" wire:click="exitSession"
+                        class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+                    Salir ✖
+                </button>
+            </div>
 
-  {{-- SUMMARY --}}
-  @if($state === 'summary')
-    <div class="rounded-3xl bg-white border p-6">
-      <div class="text-2xl sm:text-3xl font-extrabold">¡Excelente! ⭐</div>
-      <div class="text-slate-600 mt-2 text-base sm:text-lg">
-        Terminaste la sesión.
-      </div>
+            <div class="mt-3 flex items-center justify-between">
+                <div class="text-xl sm:text-2xl font-extrabold">🔊 Escucha</div>
+                <button type="button" @click="play()"
+                        class="rounded-2xl px-4 py-2 bg-white border font-bold hover:bg-slate-50">
+                    Repetir
+                </button>
+            </div>
 
-      <div class="mt-6">
-        <a href="{{ route('student.lessons.index') }}"
-          class="inline-flex items-center justify-center rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
-          Volver a mis lecciones
-        </a>
-      </div>
-    </div>
-  @endif
+            @if(!empty($target['audio_path']))
+                <audio x-ref="audioEl">
+                    <source src="{{ asset('storage/'.$target['audio_path']) }}" type="audio/mpeg">
+                </audio>
+            @endif
+
+            @if($lastFeedback === 'wrong')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    Ups… intenta otra vez 🙂
+                    <div class="text-sm text-slate-500 mt-1">Intento {{ $listenAttemptNo-1 }} de 3</div>
+                </div>
+            @elseif($lastFeedback === 'correct')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    ¡Correcto! ✅
+                </div>
+            @endif
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+                @foreach($options as $i => $opt)
+                    @php
+                        $hidden = in_array((int)$opt['id'], array_map('intval',$listenHidden), true);
+                    @endphp
+
+                    <button
+                        wire:click="pickListenOption({{ $i }})"
+                        wire:loading.attr="disabled"
+                        data-opt-id="{{ (int)$opt['id'] }}"
+                        class="rounded-3xl border p-5 sm:p-6 text-left hover:bg-slate-50 disabled:opacity-60 {{ $hidden ? 'hidden' : '' }}"
+                    >
+                        <div class="flex items-center gap-4">
+                            <div class="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xl font-extrabold">
+                                {{ $i+1 }}
+                            </div>
+
+                            <div class="flex-1">
+                                <div class="text-lg sm:text-xl font-extrabold">{{ $opt['word_en'] }}</div>
+                                <div class="text-slate-600 font-semibold">{{ $opt['translation_es'] }}</div>
+                            </div>
+                        </div>
+                    </button>
+                @endforeach
+            </div>
+
+            <div class="mt-4 text-sm text-slate-500">Pistas usadas: {{ $listenHintsUsed }}</div>
+        </div>
+    @endif
+
+    {{-- MATCHING --}}
+    @if($state === 'matching')
+        <div class="rounded-3xl bg-white border p-6"
+             x-data="{
+                highlightPair(ids){
+                    ids.forEach(id => {
+                        const el = document.querySelector(`[data-card-id='${id}']`);
+                        if(el){ el.classList.add('ring-4','ring-slate-900'); }
+                    });
+                    setTimeout(() => {
+                        ids.forEach(id => {
+                            const el = document.querySelector(`[data-card-id='${id}']`);
+                            if(el){ el.classList.remove('ring-4','ring-slate-900'); }
+                        });
+                    }, 1200);
+                }
+             }"
+             x-on:match:highlight-pair.window="highlightPair($event.detail.cardIds ?? [])"
+        >
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-500">Emparejar 🧩</div>
+                <button type="button" wire:click="exitSession"
+                        class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+                    Salir ✖
+                </button>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between gap-3">
+                <div class="text-xl sm:text-2xl font-extrabold">
+                    {{ $matchPrompt ?? 'Busca el par' }}
+                </div>
+
+                <button type="button"
+                        wire:click="matchHintHideTwoWrong"
+                        class="rounded-2xl px-4 py-2 bg-white border font-bold hover:bg-slate-50">
+                    Pista 👀
+                </button>
+            </div>
+
+            @if($matchFeedback === 'wrong')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    Ups… no es el par 🙂
+                    <div class="text-sm text-slate-500 mt-1">Intento {{ $matchAttemptNo-1 }} de 3</div>
+                </div>
+            @elseif($matchFeedback === 'correct')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    ¡Bien! ✅
+                </div>
+            @endif
+
+            <div class="mt-5 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                @foreach($matchCards as $card)
+                    @php
+                        $cid = (int)$card['card_id'];
+                        $isSolved = in_array($cid, $matchSolved, true);
+                        $isHidden = in_array($cid, $matchHiddenCards, true);
+                        $isSelected = ($matchFirst === $cid) || ($matchSecond === $cid);
+                    @endphp
+
+                    <button
+                        type="button"
+                        wire:click="pickMatchCard({{ $cid }})"
+                        data-card-id="{{ $cid }}"
+                        class="rounded-2xl border p-2 bg-white hover:bg-slate-50 transition
+                               {{ $isSolved ? 'opacity-30 pointer-events-none' : '' }}
+                               {{ $isHidden ? 'hidden' : '' }}
+                               {{ $isSelected ? 'ring-4 ring-slate-900' : '' }}"
+                    >
+                        <div class="aspect-square rounded-xl bg-slate-50 border flex items-center justify-center overflow-hidden">
+                            @if(!empty($card['image_path']))
+                                <img src="{{ asset('storage/'.$card['image_path']) }}" class="w-full h-full object-cover" alt="card">
+                            @else
+                                <div class="text-slate-400 font-extrabold text-xl">★</div>
+                            @endif
+                        </div>
+                        <div class="mt-2 text-xs font-bold text-slate-700 truncate">
+                            {{ $card['label'] ?? '' }}
+                        </div>
+                    </button>
+                @endforeach
+            </div>
+
+            <div class="mt-4 text-sm text-slate-500">
+                Pistas usadas: {{ $matchHintsUsed }} · Resueltas: {{ count($matchSolved) }}/{{ count($matchCards) }}
+            </div>
+        </div>
+    @endif
+
+    {{-- MULTIPLE CHOICE --}}
+    @if($state === 'multiple_choice')
+        @php
+            $q = $quizQuestions[$quizIndex] ?? null;
+            $options = $q['options'] ?? [];
+            $correctId = (int)($q['correct_option_id'] ?? 0);
+        @endphp
+
+        <div class="rounded-3xl bg-white border p-6"
+             x-data="{
+                highlightCorrect(id){
+                    document.querySelectorAll('[data-qopt-id]').forEach(btn => {
+                        if(parseInt(btn.dataset.qoptId) === parseInt(id)){
+                            btn.classList.add('ring-4','ring-slate-900');
+                        }
+                    });
+                },
+                revealCorrect(id){ this.highlightCorrect(id); },
+                shake(){ /* opcional */ }
+             }"
+             x-on:quiz:highlight-correct.window="highlightCorrect($event.detail.correctId)"
+             x-on:quiz:reveal-correct.window="revealCorrect($event.detail.correctId)"
+             x-on:quiz:shake.window="shake()"
+        >
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-500">
+                    Mini-quiz 📝 ({{ $quizIndex+1 }}/{{ max(1,count($quizQuestions)) }})
+                </div>
+                <button type="button" wire:click="exitSession"
+                        class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+                    Salir ✖
+                </button>
+            </div>
+
+            <div class="mt-4 text-xl sm:text-2xl font-extrabold">
+                {{ $q['prompt'] ?? 'Elige la respuesta correcta' }}
+            </div>
+
+            @if($quizFeedback === 'wrong')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    Ups… intenta otra vez 🙂
+                    <div class="text-sm text-slate-500 mt-1">Intento {{ $quizAttemptNo-1 }} de 3</div>
+                </div>
+            @elseif($quizFeedback === 'correct')
+                <div class="mt-4 rounded-2xl border bg-white p-4 text-slate-700 font-semibold">
+                    ¡Correcto! ✅
+                </div>
+            @endif
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+                @foreach($options as $i => $opt)
+                    <button
+                        wire:click="pickQuizOption({{ $i }})"
+                        wire:loading.attr="disabled"
+                        data-qopt-id="{{ (int)($opt['id'] ?? 0) }}"
+                        class="rounded-3xl border p-5 sm:p-6 text-left hover:bg-slate-50 disabled:opacity-60"
+                    >
+                        <div class="flex items-center gap-4">
+                            <div class="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xl font-extrabold">
+                                {{ $i+1 }}
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-lg sm:text-xl font-extrabold">
+                                    {{ $opt['text'] ?? 'Opción' }}
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                @endforeach
+            </div>
+
+            <div class="mt-4 text-sm text-slate-500">Pistas usadas: {{ $quizHintsUsed }}</div>
+        </div>
+    @endif
+
+    {{-- SUMMARY --}}
+    @if($state === 'summary')
+        <div class="rounded-3xl bg-white border p-6">
+            <div class="text-2xl sm:text-3xl font-extrabold">¡Excelente! ⭐</div>
+            <div class="text-slate-600 mt-2 text-base sm:text-lg">Terminaste la sesión.</div>
+
+            <div class="mt-6">
+                <a href="{{ route('student.lessons.index') }}"
+                   class="inline-flex items-center justify-center rounded-3xl px-8 py-4 bg-slate-900 text-white font-extrabold text-lg">
+                    Volver a mis lecciones
+                </a>
+            </div>
+        </div>
+    @endif
 
 </div>

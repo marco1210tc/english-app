@@ -7,6 +7,21 @@ use Illuminate\Support\Collection;
 
 class SessionContentBuilder
 {
+
+    public function resolveActivitiesByType($lesson): array
+    {
+        $acts = $lesson->activities ?? collect();
+
+        // en tu BD el key confirmado es 'listening'
+        $listening = $acts->first(fn($a) => optional($a->itemType)->key === 'listening')
+            ?? $acts->first();
+
+        $matching  = $acts->first(fn($a) => optional($a->itemType)->key === 'matching');
+        $quiz      = $acts->first(fn($a) => optional($a->itemType)->key === 'multiple_choice');
+
+        return compact('listening', 'matching', 'quiz');
+    }
+
     public function loadAssignmentForStudent(int $assignmentId, int $classroomId): ClassroomLessonAssignment
     {
         return ClassroomLessonAssignment::query()
