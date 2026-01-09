@@ -1,8 +1,6 @@
 <?php
 
-use App\Http\Controllers\Student\DashboardController;
-use App\Http\Controllers\Student\ActivityController;
-use App\Http\Controllers\Student\SessionController;
+use App\Http\Controllers\Teacher\ClassroomResultsExportController;
 use App\Http\Controllers\Student\LessonsController;
 use App\Livewire\Teacher\Classrooms\Index as TeacherClassroomsIndex;
 use App\Http\Controllers\StudentAuthController;
@@ -10,12 +8,11 @@ use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
-use App\Livewire\Teacher\Classrooms\LessonsManager;
-use App\Models\Lesson;
 use App\Models\Classroom;
-use App\Livewire\Student\Session\Player;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
+use App\Livewire\Teacher\Classrooms\StudentResults;
+use App\Livewire\Teacher\Classrooms\AttemptDetail;
 
 
 Route::get('/', function () {
@@ -29,7 +26,7 @@ Route::view('dashboard', 'dashboard')
 Route::prefix('s')->group(function () {
     // Login estudiante    
     Route::post('/login', [StudentAuthController::class, 'login'])
-        ->name('student.login.submit');    
+        ->name('student.login.submit');
     // Logout estudiante
     Route::post('/logout', [StudentAuthController::class, 'logout'])
         ->name('student.logout');
@@ -43,9 +40,9 @@ Route::prefix('s')->group(function () {
         Route::get('/lessons/{assignmentId}', [LessonsController::class, 'show'])
             ->name('student.lessons.show');
         // PLAYER
-        Route::get('/session/{assignmentId}', fn($assignmentId) => 
-            view('student.session.play', compact('assignmentId')))
-            ->name('student.session.play');  
+        Route::get('/session/{assignmentId}', fn($assignmentId) =>
+        view('student.session.play', compact('assignmentId')))
+            ->name('student.session.play');
     });
 });
 
@@ -58,10 +55,23 @@ Route::middleware(['auth', 'role:teacher,admin'])
         Route::get('/classrooms', TeacherClassroomsIndex::class)
             ->name('teacher.classrooms.index');
 
-        // UI livewire manager
-        Route::get('/classrooms/{classroom}/lessons', fn(Classroom $classroom) => 
-            view('teacher.classrooms.lessons-manager', compact('classroom')))
+        // LECCIONES
+        Route::get('/classrooms/{classroom}/lessons', fn(Classroom $classroom) =>
+        view('teacher.classrooms.lessons-manager', compact('classroom')))
             ->name('teacher.classrooms.lessons');
+
+        Route::get('/classrooms/{classroom}/results', fn(Classroom $classroom) =>
+        view('teacher.classrooms.results', compact('classroom')))
+            ->name('teacher.classrooms.results');
+
+        Route::get('/classrooms/{classroom}/results/export', [ClassroomResultsExportController::class, 'export'])
+            ->name('teacher.classrooms.results.export');
+
+        Route::get('/classrooms/{classroom}/results/{student}', StudentResults::class)
+            ->name('teacher.classrooms.results.student');
+
+        Route::get('/classrooms/{classroom}/attempts/{attempt}', AttemptDetail::class)
+            ->name('teacher.classrooms.attempts.show');
     });
 
 
@@ -89,4 +99,3 @@ Route::middleware(['auth'])->group(function () {
         )
         ->name('two-factor.show');
 });
-

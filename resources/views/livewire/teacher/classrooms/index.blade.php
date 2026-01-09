@@ -5,26 +5,38 @@
   </div>
 
   @if($classrooms->isEmpty())
-    <div class="bg-white border rounded-2xl p-6">
-      No tienes secciones asignadas.
-    </div>
+  <div class="bg-white border rounded-2xl p-6">
+    No tienes secciones asignadas.
+  </div>
   @else
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      @foreach($classrooms as $c)
-        <a href="{{ route('teacher.classrooms.lessons', $c) }}"
-           class="bg-white border rounded-2xl p-6 hover:bg-slate-50 transition block">
-          <div class="text-sm text-slate-600">
-            Grado: {{ $c->grade->name ?? $c->grade_id }}
-          </div>
-          <div class="text-xl font-extrabold mt-1">
-            {{ $c->name }}
-          </div>
-          @if($c->class_code)
-            <div class="text-slate-600 mt-2 text-sm">Código: {{ $c->class_code }}</div>
-          @endif
-          <div class="mt-4 text-slate-700 font-semibold">Gestionar lecciones →</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    @foreach($classrooms as $c)
+    <div class="bg-white border rounded-2xl p-6 hover:bg-slate-50 transition block">
+      <div class="text-sm text-slate-600">
+        Grado: {{ $c->grade->name ?? $c->grade_id }}
+      </div>
+      <div class="text-xl font-extrabold mt-1">
+        {{ $c->name }}
+      </div>
+      @if($c->class_code)
+      <div class="text-slate-600 mt-2 text-sm">Código: {{ $c->class_code }}</div>
+      @endif
+      <div class="flex flex-col justify-between">
+        <a  href="{{ route('teacher.classrooms.lessons', $c) }}" class="mt-4 text-slate-700 font-semibold">
+          <span class="bg-secondary-500 text-white px-3 py-2 rounded-full">
+            Gestionar lecciones → 
+          </span>
         </a>
-      @endforeach
+        <br>
+        <a href="{{ route('teacher.classrooms.results', $c) }}">
+          <span class="bg-accent-200 font-semibold text-white px-3 py-2 rounded-full">
+            Ver resultados →
+          </span>
+        </a>
+      </div>
     </div>
+
+    @endforeach
+  </div>
   @endif
 </div>
