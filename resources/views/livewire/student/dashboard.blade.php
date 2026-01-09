@@ -60,7 +60,7 @@
                     Continuar
                 </x-ui.kid-button>
                 <a href="{{ route('student.lessons.show', ['assignmentId' => $continueAssignmentId]) }}">
-                    <x-ui.kid-button>
+                    <x-ui.kid-button :primary="false">
                         Ver detalle
                     </x-ui.kid-button>
                 </a>
