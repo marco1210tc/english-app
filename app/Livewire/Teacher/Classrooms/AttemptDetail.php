@@ -7,6 +7,8 @@ use App\Models\Classroom;
 use App\Models\StudentActivityAttempt;
 use App\Models\StudentItemAttempt;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 
 class AttemptDetail extends Component
 {
@@ -56,12 +58,11 @@ class AttemptDetail extends Component
     {
         $this->loadItems();
     }
-    
+
     public function updatedGame(): void
     {
         $this->loadItems();
     }
-
 
     public function loadItems(): void
     {
@@ -69,15 +70,19 @@ class AttemptDetail extends Component
             ->where('activity_attempt_id', $this->attempt->id)
             ->orderBy('id');
 
+        // filtro por juego (type en response_json) - compatible sqlite/mysql
+        $this->applyGameFilter($q);
+
+        // correct/wrong
         if ($this->filterCorrect === 'correct') {
             $q->where('is_correct', true);
         } elseif ($this->filterCorrect === 'wrong') {
             $q->where('is_correct', false);
         }
 
+        // búsqueda
         if (trim($this->search) !== '') {
             $term = '%' . trim($this->search) . '%';
-            // buscamos por item_key o por contenido JSON (simple)
             $q->where(function ($qq) use ($term) {
                 $qq->where('item_key', 'like', $term)
                     ->orWhere('response_json', 'like', $term);
@@ -95,18 +100,71 @@ class AttemptDetail extends Component
             'created_at',
         ]);
 
+        // summary del filtro actual
+        $count = $items->count();
+        $correct = $items->where('is_correct', true)->count();
+        $wrong = $count - $correct;
+        $hints = (int) $items->sum('hints_used');
+        $seconds = (int) $items->sum('time_spent_seconds');
+
+        $this->summary = [
+            'count' => $count,
+            'correct' => $correct,
+            'wrong' => $wrong,
+            'hints' => $hints,
+            'seconds' => $seconds,
+        ];
+
         $this->items = $items->map(function ($i) {
+            $type = null;
+            if (is_array($i->response_json)) {
+                $type = $i->response_json['type'] ?? null;
+            }
+
             return [
                 'id' => $i->id,
+                'type' => $type ?: '—',
                 'item_key' => $i->item_key,
                 'is_correct' => (bool)$i->is_correct,
                 'attempts' => (int)$i->attempts,
                 'time_spent_seconds' => (int)$i->time_spent_seconds,
                 'hints_used' => (int)$i->hints_used,
-                'response_json' => $i->response_json, // cast a array
+                'response_json' => $i->response_json,
                 'created_at' => $i->created_at,
             ];
         })->all();
+    }
+
+
+    private function applyGameFilter($q): void
+    {
+        if ($this->game === 'all') return;
+
+        $driver = $q->getConnection()->getDriverName(); // sqlite|mysql|pgsql...
+
+        if ($driver === 'sqlite') {
+            if ($this->game === 'other') {
+                $q->where(function ($qq) {
+                    $qq->whereNull('response_json')
+                        ->orWhereRaw("json_extract(response_json, '$.type') IS NULL")
+                        ->orWhereRaw("json_extract(response_json, '$.type') NOT IN ('listening','matching','multiple_choice','flashcard')");
+                });
+            } else {
+                $q->whereRaw("json_extract(response_json, '$.type') = ?", [$this->game]);
+            }
+            return;
+        }
+
+        // MySQL / MariaDB
+        if ($this->game === 'other') {
+            $q->where(function ($qq) {
+                $qq->whereNull('response_json')
+                    ->orWhereRaw("JSON_EXTRACT(response_json, '$.type') IS NULL")
+                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(response_json, '$.type')) NOT IN ('listening','matching','multiple_choice','flashcard')");
+            });
+        } else {
+            $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(response_json, '$.type')) = ?", [$this->game]);
+        }
     }
 
     public function render()

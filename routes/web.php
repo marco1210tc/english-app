@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Livewire\Teacher\Classrooms\StudentResults;
 use App\Livewire\Teacher\Classrooms\AttemptDetail;
+use App\Livewire\Teacher\Classrooms\AttemptGameDetail;
 
 
 Route::get('/', function () {
