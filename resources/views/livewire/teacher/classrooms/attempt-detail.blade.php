@@ -102,7 +102,7 @@
                     <th class="py-3 pr-4">Intentos</th>
                     <th class="py-3 pr-4">Pistas</th>
                     <th class="py-3 pr-4">Tiempo</th>
-                    <th class="py-3 pr-0">Respuesta (json)</th>
+                    <th class="py-3 pr-0">Detalle</th>
                 </tr>
             </thead>
 
@@ -146,9 +146,121 @@
                         {{ $min }}m {{ $rem }}s
                     </td>
 
-                    <td class="py-3 pr-0">
-                        <pre
-                            class="text-xs bg-slate-50 border rounded-xl p-3 whitespace-pre-wrap break-words">{{ json_encode($r['response_json'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                    <td class="py-3 pr-4 text-slate-700 align-top">
+                        @php
+                        $type = $r['type'] ?? null;
+                        $j = is_array($r['response_json'] ?? null) ? $r['response_json'] : [];
+                        @endphp
+
+                        @switch($type)
+
+                        {{-- FLASHCARD --}}
+                        @case('flashcard')
+                        <div class="text-sm">
+                            <div><span class="font-semibold">Vocab:</span>
+                                @php $vId = $j['vocab_id'] ?? null; @endphp
+                                {{ $vId ? ($vocabMap[$vId] ?? "ID {$vId}") : '—' }}
+                            </div>
+                        </div>
+                        @break
+
+                        {{-- LISTENING --}}
+                        @case('listening')
+                        @php
+                        $tId = $j['target_vocab_id'] ?? null;
+                        $pId = $j['picked_vocab_id'] ?? null;
+                        $tLabel = $tId ? ($vocabMap[$tId] ?? $tId) : '—';
+                        $pLabel = $pId ? ($vocabMap[$pId] ?? $pId) : '—';
+                        @endphp
+
+                        <div class="text-sm space-y-1">
+                            <div>
+                                <span class="font-semibold">Target:</span> {{ $tLabel }}
+                                <span class="text-slate-500 text-xs">(#{{ $tId ?? '—' }})</span>
+                            </div>
+
+                            <div>
+                                <span class="font-semibold">Picked:</span> {{ $pLabel }}
+                                <span class="text-slate-500 text-xs">(#{{ $pId ?? '—' }})</span>
+                            </div>
+
+                            <div class="text-slate-500">
+                                intento: {{ $j['attempt_no'] ?? '—' }} | opt: {{ $j['opt_index'] ?? '—' }}
+                            </div>
+                        </div>
+                        @break
+
+
+                        {{-- MATCHING --}}
+                        @case('matching')
+                        <div class="text-sm space-y-1">
+                            <div>
+                                <span class="font-semibold">Acción:</span>
+                                {{ $j['action'] ?? ($j['note'] ?? '—') }}
+                            </div>
+                            @if(isset($j['first_card_id']) || isset($j['second_card_id']))
+                            <div class="text-slate-700">
+                                <span class="font-semibold">Cartas:</span>
+                                {{ $j['first_card_id'] ?? '—' }} + {{ $j['second_card_id'] ?? '—' }}
+                            </div>
+                            @endif
+                            @if(isset($j['pair_key']))
+                            <div class="text-slate-700">
+                                <span class="font-semibold">Par:</span> {{ $j['pair_key'] }}
+                            </div>
+                            @endif
+                        </div>
+                        @break
+
+                        {{-- MULTIPLE CHOICE --}}
+                        @case('multiple_choice')
+                        @php
+                        $qId = (int)($j['question_id'] ?? 0);
+
+                        $prompt = $qId ? ($questionMap[$qId] ?? null) : null;
+                        $prompt = $prompt ?: ($j['prompt'] ?? null); // fallback si lo guardaste en response_json
+                        $prompt = $prompt ?: 'Elige la respuesta correcta';
+
+                        $pickedId = (int)($j['picked_option_id'] ?? 0);
+                        $correctId = (int)($j['correct_option_id'] ?? 0);
+
+                        $pickedTxt = $pickedId ? ($optionMap[$pickedId] ?? "ID {$pickedId}") : '—';
+                        $correctTxt = $correctId ? ($optionMap[$correctId] ?? "ID {$correctId}") : '—';
+
+                        $opts = $j['options'] ?? null;
+                        @endphp
+
+                        <div class="text-sm space-y-1">
+                            <div>
+                                <div class="font-semibold text-slate-900">Question</div>
+                                <div class="text-slate-700">{{ $prompt }}</div>
+                                <div class="text-xs text-slate-500 mt-1">QID: {{ $qId ?: '—' }}</div>
+                            </div>
+                            <div class="grid gap-1">
+                                <div>
+                                    <span class="font-semibold">Picked:</span>
+                                    {{ $pickedTxt }}
+                                    <span class="text-slate-500">(opt: {{ $j['opt_index'] ?? '—' }})</span>
+                                </div>
+
+                                <div class="text-slate-600">
+                                    <span class="font-semibold">Correct:</span>
+                                    {{ $correctTxt }}
+                                </div>
+
+                                <div class="text-xs text-slate-500">
+                                    attempt: {{ $j['attempt_no'] ?? '—' }}
+                                    | opt_index: {{ $j['opt_index'] ?? '—' }}
+                                </div>
+                            </div>
+                        </div>
+                        @break
+
+                        @default
+                        <div class="text-xs text-slate-500 whitespace-pre-wrap">
+                            {{ json_encode($r['response_json'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}
+                        </div>
+                        @endswitch
                     </td>
                 </tr>
                 @empty

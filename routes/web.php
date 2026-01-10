@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Livewire\Teacher\Classrooms\StudentResults;
 use App\Livewire\Teacher\Classrooms\AttemptDetail;
-use App\Livewire\Teacher\Classrooms\AttemptGameDetail;
 
 
 Route::get('/', function () {
@@ -73,6 +72,7 @@ Route::middleware(['auth', 'role:teacher,admin'])
 
         Route::get('/classrooms/{classroom}/attempts/{attempt}', AttemptDetail::class)
             ->name('teacher.classrooms.attempts.show');
+
     });
 
 

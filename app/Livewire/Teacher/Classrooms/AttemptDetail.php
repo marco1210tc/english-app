@@ -31,6 +31,10 @@ class AttemptDetail extends Component
         'seconds' => 0,
     ];
 
+    public array $vocabMap = []; // [vocab_id => word_en]
+    public array $optionMap = [];  // [option_id => text]
+    public array $questionMap = []; // [question_id => prompt]
+
     public function mount(Classroom $classroom, StudentActivityAttempt $attempt): void
     {
         $this->classroom = $classroom;
@@ -114,6 +118,56 @@ class AttemptDetail extends Component
             'hints' => $hints,
             'seconds' => $seconds,
         ];
+
+        // ====== Maps para render “humano” (sin tocar BD) ======
+        // vocab map (para mostrar word_en por vocab_id)
+        $vocabIds = [];
+        $optionIds = [];
+        $questionIds = [];
+
+        foreach ($items as $it) {
+            $j = is_array($it->response_json) ? $it->response_json : [];
+
+            //listening
+            if (!empty($j['target_vocab_id'])) $vocabIds[] = (int)$j['target_vocab_id'];
+            if (!empty($j['picked_vocab_id'])) $vocabIds[] = (int)$j['picked_vocab_id'];
+
+            // quiz
+            if (!empty($j['picked_option_id']))  $optionIds[] = (int) $j['picked_option_id'];
+            if (!empty($j['correct_option_id'])) $optionIds[] = (int) $j['correct_option_id'];
+            if (!empty($j['question_id'])) $questionIds[] = (int) $j['question_id'];
+        }
+        $vocabIds  = array_values(array_unique(array_filter($vocabIds)));
+        $optionIds = array_values(array_unique(array_filter($optionIds)));
+        $questionIds = array_values(array_unique(array_filter($questionIds)));
+
+        $vocabMap = [];
+        if (count($vocabIds) > 0) {
+            $vocabMap = \App\Models\Vocabulary::query()
+                ->whereIn('id', $vocabIds)
+                ->pluck('word_en', 'id')
+                ->toArray();
+        }
+
+        $optionMap = [];
+        if (count($optionIds) > 0) {
+            $optionMap = \App\Models\QuestionOption::query()
+                ->whereIn('id', $optionIds)
+                ->pluck('text', 'id')
+                ->toArray();
+        }
+
+        $questionMap = [];
+        if (count($questionIds) > 0) {
+            $this->questionMap = \App\Models\Question::query()
+                ->whereIn('id', $questionIds)
+                ->pluck('prompt', 'id')
+                ->toArray();
+        }
+
+        $this->vocabMap = $vocabMap;
+        $this->optionMap = $optionMap;
+        $this->questionMap = $questionMap;
 
         $this->items = $items->map(function ($i) {
             $type = null;
