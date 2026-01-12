@@ -13,11 +13,14 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Livewire\Teacher\Classrooms\StudentResults;
 use App\Livewire\Teacher\Classrooms\AttemptDetail;
+// use App\Livewire\Teacher\Classrooms\AttemptGameDetail;
 
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+// Route::get('/', function () {
+//     return view('welcome');
+// })->name('lohin');
+
+Route::get('/', fn() => redirect(route('login')));
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
@@ -73,6 +76,8 @@ Route::middleware(['auth', 'role:teacher,admin'])
         Route::get('/classrooms/{classroom}/attempts/{attempt}', AttemptDetail::class)
             ->name('teacher.classrooms.attempts.show');
 
+        // Route::get('/classrooms/{classroom}/results/{student}/attempts/{attempt}/games', AttemptGameDetail::class)
+        //     ->name('teacher.classrooms.results.attempt.games');
     });
 
 
