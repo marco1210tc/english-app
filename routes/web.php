@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Teacher\ClassroomResultsExportController;
+use App\Http\Controllers\Teacher\AttemptExportController;
+use App\Http\Controllers\Teacher\StudentExportController;
 use App\Http\Controllers\Student\LessonsController;
 use App\Livewire\Teacher\Classrooms\Index as TeacherClassroomsIndex;
 use App\Http\Controllers\StudentAuthController;
@@ -75,6 +77,12 @@ Route::middleware(['auth', 'role:teacher,admin'])
 
         Route::get('/classrooms/{classroom}/attempts/{attempt}', AttemptDetail::class)
             ->name('teacher.classrooms.attempts.show');
+
+        Route::get('/classrooms/{classroom}/attempts/{attempt}/export', [AttemptExportController::class, 'export'])
+            ->name('teacher.classrooms.attempts.export');
+
+        Route::get('/classrooms/{classroom}/students/{student}/export', [StudentExportController::class, 'export'])
+            ->name('teacher.classrooms.students.export');
 
         // Route::get('/classrooms/{classroom}/results/{student}/attempts/{attempt}/games', AttemptGameDetail::class)
         //     ->name('teacher.classrooms.results.attempt.games');

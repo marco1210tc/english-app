@@ -19,6 +19,12 @@
     </div>
   </div>
 
+  <a href="{{ route('teacher.classrooms.students.export', [$classroom, $student]) }}"
+    class="inline-flex items-center gap-2 bg-white border rounded-2xl px-4 py-2 font-semibold hover:bg-slate-50">
+    Exportar todo (CSV)
+  </a>
+
+
   <div class="bg-white border rounded-2xl p-6 overflow-x-auto">
     <table class="min-w-full text-sm">
       <thead>
@@ -29,6 +35,7 @@
           <th class="py-3 pr-4">% Acierto</th>
           <th class="py-3 pr-0">Tiempo</th>
           <th class="py-3 pr-0">Detalle</th>
+          <th class="py-3 pr-0">Acción</th>
         </tr>
       </thead>
 
@@ -72,6 +79,12 @@
             <a class="font-semibold hover:underline"
               href="{{ route('teacher.classrooms.attempts.show', [$classroom, $r['attempt_id']]) }}">
               Ver →
+            </a>
+          </td>
+          <td>
+            <a href="{{ route('teacher.classrooms.attempts.export', [$classroom, $r['attempt_id']]) }}"
+              class="inline-flex items-center gap-2 bg-white border rounded-xl px-3 py-2 font-semibold hover:bg-slate-50">
+              Exportar CSV
             </a>
           </td>
         </tr>

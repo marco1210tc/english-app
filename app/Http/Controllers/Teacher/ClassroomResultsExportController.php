@@ -70,7 +70,9 @@ class ClassroomResultsExportController extends Controller
                 'student' => trim(($s->first_name ?? '') . ' ' . ($s->last_name ?? '')) ?: $s->code,
                 'code' => $s->code,
                 'attempts_completed' => (int) ($a->attempts_completed ?? 0),
-                'last_completed_at' => $a?->last_completed_at ? (string)$a->last_completed_at : '',
+                'last_completed_at' => $a?->last_completed_at
+                    ? \Illuminate\Support\Carbon::parse($a->last_completed_at)->format('Y-m-d H:i:s')
+                    : '',
                 'score' => $score,
                 'max' => $max,
                 'pct' => $pct,
@@ -80,9 +82,22 @@ class ClassroomResultsExportController extends Controller
 
         // Orden recomendado: último intento DESC, luego nombre
         usort($rows, function ($x, $y) {
-            $dx = $x['last_completed_at'] ?: '0000-00-00 00:00:00';
-            $dy = $y['last_completed_at'] ?: '0000-00-00 00:00:00';
-            return strcmp($dy, $dx); // DESC
+            $xNull = empty($x['last_completed_at']);
+            $yNull = empty($y['last_completed_at']);
+
+            // NULL al final
+            if ($xNull !== $yNull) {
+                return $xNull <=> $yNull;
+            }
+
+            // ambos con fecha: más reciente primero
+            if (!$xNull && !$yNull) {
+                $cmp = strcmp((string)$y['last_completed_at'], (string)$x['last_completed_at']);
+                if ($cmp !== 0) return $cmp;
+            }
+
+            // desempate por nombre asc
+            return strcmp(mb_strtolower($x['student']), mb_strtolower($y['student']));
         });
 
         // CSV streaming
@@ -92,7 +107,7 @@ class ClassroomResultsExportController extends Controller
             $out = fopen('php://output', 'w');
 
             // BOM para Excel (UTF-8)
-            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             // headers
             fputcsv($out, [
@@ -103,10 +118,14 @@ class ClassroomResultsExportController extends Controller
                 'Puntaje',
                 'Max',
                 'Porcentaje',
-                'Tiempo_segundos',
+                // 'Tiempo_segundos', //total en segundos
+                'Tiempo_mmss',
             ]);
 
             foreach ($rows as $r) {
+                $sec = (int) $r['total_seconds'];
+                $min = intdiv($sec, 60);
+                $rem = $sec % 60;
                 fputcsv($out, [
                     $r['student'],
                     $r['code'],
@@ -115,7 +134,8 @@ class ClassroomResultsExportController extends Controller
                     $r['score'],
                     $r['max'],
                     $r['pct'],
-                    $r['total_seconds'],
+                    // $r['total_seconds'],
+                    "{$min}m {$rem}s", // formato legible
                 ]);
             }
 
