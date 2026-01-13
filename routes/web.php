@@ -47,6 +47,7 @@ Route::prefix('s')->group(function () {
         // PLAYER
         Route::get('/session/{assignmentId}', fn($assignmentId) =>
         view('student.session.play', compact('assignmentId')))
+            ->whereNumber('assignmentId')
             ->name('student.session.play');
     });
 });

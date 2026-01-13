@@ -71,7 +71,7 @@ class Player extends Component
 
         $this->assignment = ClassroomLessonAssignment::query()
             ->with([
-                'lesson.vocabulary' => fn ($q) => $q->where('status', 'published')
+                'lesson.vocabulary' => fn($q) => $q->where('status', 'published')
                     ->orderBy('lesson_vocabulary.order_index'),
                 'lesson.activities.itemType',
                 'lesson.activities.questions.options',
@@ -83,7 +83,7 @@ class Player extends Component
         $this->vocab = $this->assignment->lesson->vocabulary->values();
 
         // 1) flashcards
-        $this->flashcards = $this->vocab->take(5)->map(fn ($v) => [
+        $this->flashcards = $this->vocab->take(5)->map(fn($v) => [
             'id' => (int) $v->id,
             'word_en' => $v->word_en,
             'translation_es' => $v->translation_es,
@@ -111,6 +111,22 @@ class Player extends Component
         // 4) resolver activities + quiz desde BD
         $this->resolveActivityIds();
         $this->quizQuestions = $this->buildQuizQuestions();
+
+        // Si no hay listenItems, pasa a listening 
+        if (empty($this->listenItems)) {
+            $this->listenItems = [];
+        }
+
+        // Si no hay matchCards, queda vacío
+        if (empty($this->matchCards)) {
+            $this->matchCards = [];
+            $this->matchPrompt = 'Empareja';
+        }
+
+        // Si no hay quizQuestions, queda vacío y el flujo debe saltar a summary
+        if (empty($this->quizQuestions)) {
+            $this->quizQuestions = [];
+        }
     }
 
     // ======================= START =======================
@@ -161,7 +177,7 @@ class Player extends Component
         if ($this->state !== 'flashcards') return;
 
         $this->track(
-            itemKey: 'flash_'.$this->flashIndex,
+            itemKey: 'flash_' . $this->flashIndex,
             isCorrect: true,
             attempts: 1,
             hintsUsed: 0,
@@ -211,7 +227,7 @@ class Player extends Component
         $isCorrect = $pickedId && ($pickedId === $targetId);
 
         $this->track(
-            itemKey: 'listening_'.$this->listenIndex,
+            itemKey: 'listening_' . $this->listenIndex,
             isCorrect: $isCorrect,
             attempts: $this->listenAttemptNo,
             hintsUsed: $this->listenHintsUsed,
@@ -332,7 +348,7 @@ class Player extends Component
         $isCorrect = ($first['pair_key'] === $second['pair_key']);
 
         $this->track(
-            itemKey: 'matching_'.$this->matchPromptKey(),
+            itemKey: 'matching_' . $this->matchPromptKey(),
             isCorrect: $isCorrect,
             attempts: $this->matchAttemptNo,
             hintsUsed: $this->matchHintsUsed,
@@ -489,7 +505,7 @@ class Player extends Component
         $isCorrect = $pickedId && $correctId && ($pickedId === $correctId);
 
         $this->track(
-            itemKey: 'mc_'.$this->quizIndex,
+            itemKey: 'mc_' . $this->quizIndex,
             isCorrect: $isCorrect,
             attempts: $this->quizAttemptNo,
             hintsUsed: $this->quizHintsUsed,
@@ -609,7 +625,7 @@ class Player extends Component
         $cardId = 1;
 
         foreach ($vocab->values() as $v) {
-            $pairKey = 'v'.$v->id;
+            $pairKey = 'v' . $v->id;
 
             // duplicado visual (2 cartas idénticas)
             $cards[] = [
