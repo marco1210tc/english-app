@@ -2,13 +2,6 @@
 
     {{-- Saludo + progreso --}}
     <section class="space-y-4 mb-6">
-        <div class="text-white font-bold">
-            <form class="px-3 py-6 bg-red-300" action="{{ route('student.logout') }}" method="POST">
-                @csrf
-                <button type="submit"> Logout </button>
-            </form>
-        </div>
-
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="text-sm text-text-muted">

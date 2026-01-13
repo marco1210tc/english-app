@@ -17,6 +17,7 @@
     {{-- Header del estudiante --}}
     <header class="w-full border-b border-neutral-200/70 bg-surface/90 backdrop-blur-sm">
       <div class="mx-auto w-full max-w-5xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
+
         {{-- Logo + nombre app --}}
         <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3">
           <div href="{{ route('student.dashboard') }}" 
@@ -32,6 +33,13 @@
             </p>
           </div>
         </a>
+
+        <div class="px-4 py-3 bg-red-600 rounded-xl hover:bg-red-500 cursor-pointer text-white font-bold">
+            <form action="{{ route('student.logout') }}" method="POST">
+                @csrf
+                <button class="cursor-pointer" type="submit"> Logout </button>
+            </form>
+        </div>
 
         {{-- Info del estudiante (placeholder: usa tus datos reales) --}}
         <div class="flex items-center gap-3">
