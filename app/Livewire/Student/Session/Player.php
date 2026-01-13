@@ -409,18 +409,43 @@ class Player extends Component
     {
         if ($this->state !== 'matching') return;
 
-        // oculta 2 cartas NO resueltas (pista simple)
-        $candidates = collect($this->matchCards)
-            ->filter(fn($c) => !in_array($c['card_id'], $this->matchSolved, true))
-            ->filter(fn($c) => !in_array($c['card_id'], $this->matchHiddenCards, true))
-            ->values();
+        // Si ya hay una carta seleccionada, buscamos su par
+        $targetPairKey = null;
 
-        if ($candidates->count() <= 2) return;
+        if ($this->matchFirst !== null) {
+            $first = collect($this->matchCards)->firstWhere('card_id', $this->matchFirst);
+            $targetPairKey = $first['pair_key'] ?? null;
+        }
 
-        $pick = $candidates->shuffle()->take(2)->pluck('card_id')->all();
-        foreach ($pick as $cid) $this->matchHiddenCards[] = (int) $cid;
+        // Si no hay selección, tomamos un par NO resuelto cualquiera (seguro)
+        if (!$targetPairKey) {
+            $unsolved = collect($this->matchCards)
+                ->filter(fn($c) => !in_array((int)$c['card_id'], $this->matchSolved, true))
+                ->values();
 
+            if ($unsolved->count() < 2) return;
+
+            $targetPairKey = $unsolved->first()['pair_key'] ?? null;
+        }
+
+        if (!$targetPairKey) return;
+
+        // obtenemos las 2 cartas del par que NO estén resueltas
+        $pairCardIds = collect($this->matchCards)
+            ->filter(fn($c) => ($c['pair_key'] ?? null) === $targetPairKey)
+            ->filter(fn($c) => !in_array((int)$c['card_id'], $this->matchSolved, true))
+            ->pluck('card_id')
+            ->map(fn($id) => (int)$id)
+            ->values()
+            ->all();
+
+        if (count($pairCardIds) < 2) return;
+
+        // pista: resaltar el par
         $this->matchHintsUsed += 1;
+        $this->dispatch('match:highlight-pair', cardIds: $pairCardIds);
+
+        // NO ocultamos nada -> nunca bloquea el juego
     }
 
     private function resetMatchState(): void
@@ -451,14 +476,14 @@ class Player extends Component
             ->groupBy('pair_key')
             ->values();
 
-        $group = $unsolved->first(); // estable (sin randomness salvaje)
+        $group = $unsolved->first(); // estable (sin random inestable)
         if (!$group || $group->count() === 0) {
             $this->matchPrompt = 'Encuentra el par';
             return;
         }
 
         $label = $group->first()['label'] ?? 'Encuentra el par';
-        // aquí puedes cambiar a translation_es si quieres:
+        // aquí se puede cambiar a translation_es:
         $this->matchPrompt = "Busca: {$label}";
     }
 
