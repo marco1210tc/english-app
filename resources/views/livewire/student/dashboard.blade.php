@@ -65,7 +65,7 @@
                     </x-ui.kid-button>
                 </a>
                 @else
-                <a href="{{ route('student.lessons.index') }}'">
+                <a href="{{ route('student.lessons.index') }}">
                     <x-ui.kid-button>
                         Ir a mis lecciones
                     </x-ui.kid-button>
